@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es5", // Sätt det till ES5 för bredare webbläsarstöd
+    "sourceMap": true,
+    "lib": [
+      "dom",
+      "esnext"
+    ], // Tillåt dom- och esnext-bibliotek
+    "jsx": "react-jsx", // För React 17 och senare
+    "moduleResolution": "node", // Gör det möjligt att lösa moduler som Node.js
+    "esModuleInterop": true, // För att hantera CommonJS-moduler korrekt
+    "strict": true, // Slå på strikt typkontroll
+    "module": "esnext", // För modern modulhantering
+    "skipLibCheck": true, // Förbättrar kompileringens hastighet
+    "forceConsistentCasingInFileNames": true // Ser till att filnamn är konsekventa i små/stora bokstäver
+  },
+  "include": [
+    "src/**/*" // Inkludera alla filer i src-mappen
+  ],
+  "exclude": [
+    "node_modules", // Uteslut node_modules
+    "build" // Uteslut build-mappen om den finns
+  ]
+}

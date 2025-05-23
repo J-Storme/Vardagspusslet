@@ -1,21 +1,22 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { Client } from 'pg';
 import dotenv from 'dotenv';
 import cors from 'cors'
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
 
 // Läs in miljövariabler från .env-fil
 dotenv.config();
 
 const app = express();
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 app.use(cors()); // middleware som löser cors
 app.use(express.json()); // middleware för att tolka JSON-body
 
 // Anslut till PostgreSQL-databas
 const client = new Client({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.PORT || 8080
 });
 client.connect();
 

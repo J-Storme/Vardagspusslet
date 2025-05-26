@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": ".",
+    "rootDir": "",
     "target": "ES2016",
     "module": "commonjs", // Vanligast i node.js-projekt
     "esModuleInterop": true, // Gör det lättare att importera CommonJS-moduler

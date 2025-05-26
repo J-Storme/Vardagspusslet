@@ -45,7 +45,6 @@ function Navbar() {
         <TasksIconWithHover>
           <Link to="/checkout">
           </Link>
-          <PriceInfo> kr</PriceInfo>
         </TasksIconWithHover>
       </TasksIconContainer>
     </NavbarContainer>
@@ -77,19 +76,11 @@ const NumberofItems = styled.span`
   height: 20px;
 `;
 
-const PriceInfo = styled.p`
-  font-size: 14px;
-  color: #ffffff;
-  margin-top: 5px;
-  opacity: 0; /* Göm priset från början */
-  transition: opacity 0.3s ease;
-`;
-
 const TasksIconWithHover = styled.div`
   position: relative;
 
-  &:hover ${PriceInfo} {
-    opacity: 1; /* Visa priset när man hovrar */
+  &:hover {
+    opacity: 1; 
   }
 `;
 

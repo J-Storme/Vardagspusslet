@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node index.js",
-    "build-frontend": "npm run --prefix ../frontend build && rm -Rf build && mv ../frontend/build .",
+    "build-frontend": "npm run --prefix ../frontend build && rm -Rf dist && mv ../frontend/dist .",
     "dev": "nodemon --ext ts --exec ts-node index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -19,7 +19,9 @@ const Account = () => {
   useEffect(() => {
     const savedMembers = localStorage.getItem('familyMembers');
     if (savedMembers) {
+      console.log('test')
       setMembers(JSON.parse(savedMembers));
+
     }
   }, []);
 

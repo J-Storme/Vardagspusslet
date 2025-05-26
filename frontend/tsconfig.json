@@ -14,7 +14,10 @@
     "skipLibCheck": true, // Förbättrar kompileringens hastighet
     "forceConsistentCasingInFileNames": true, // Ser till att filnamn är konsekventa i små/stora bokstäver
     "outDir": "build",
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "src/**/*" // Inkludera alla filer i src-mappen

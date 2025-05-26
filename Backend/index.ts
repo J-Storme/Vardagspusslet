@@ -16,39 +16,45 @@ app.use(express.json()); // middleware för att tolka JSON-body
 
 // Anslut till PostgreSQL-databas
 const client = new Client({
-  connectionString: process.env.PORT || 8080
+  connectionString: process.env.PGURI,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 client.connect();
 
 // Middleware för att autentisera token
 async function authenticate(request: Request, response: Response, next: NextFunction) {
-  // Hämta token från query-parametern
+  // Hämta token från query-parametern eller authorization-headren
   const token = request.query.token as string || request.headers.authorization;
 
   if (!token) {
     return response.status(401).json({ error: 'Token saknas' });
   }
+  try {
+    // Hämta användaren baserat på token
+    const user = await client.query('SELECT * FROM users WHERE token = $1', [token]);
 
-  // Hämta användaren baserat på token
-  const user = await client.query('SELECT * FROM users WHERE token = $1', [token]);
 
-  if (!user) {
-    return response.status(401).json({ error: 'Ogiltig token' });
+    if (user.rows.length === 0) {
+      return response.status(401).json({ error: 'Ogiltig token' });
+    }
+
+    // Spara användarens ID i request-objektet
+    (request as any).user = user.rows[0].id;
+    next(); // Släpp vidare till nästa middleware eller route
+  } catch (error) {
+    console.error('Fel vid autentisering:', error);
+    response.status(500).json({ error: 'Serverfel vid autentisering' });
   }
-
-  // Spara användarens ID i request-objektet
-  request.user = user.id;
-  next(); // Släpp vidare till nästa middleware eller route
 }
 
 // Token-hantering
 const tokens: { [email: string]: string } = {};
 
-
-
 // GET
-app.get('/', (require, response) => {
-  response.send('API');
+app.get('/', (_request, response) => {
+  response.send('root');
 });
 
 // GET api
@@ -56,30 +62,32 @@ app.get("/api", (_request, response) => {
   response.send({ test: "test" })
 })
 
-app.use(express.static(path.join(path.resolve(), "dist")))
+
 
 /*
 GET / events              // Hämta alla
 POST / events             // Lägg till nytt event
 DELETE / events /: id       // Ta bort ett event
 */
+
+/*
 // POST & INSERT, registera användare
 app.post('/register', async (request, response) => {
-  const { email, password, name, adress } = request.body;
+  const { email, password, name } = request.body;
   const token = uuidv4();
 
   try {
     // Kontrollera om användaren redan finns i databasen
-    const existingUser = await database.get('SELECT * FROM users WHERE email = ?', [email]);
+    const existingUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
 
-    if (existingUser) {
+    if (existingUser.rows.length > 0) {
       return response.status(400).json({ error: 'E-postadress är redan registrerad' });
     }
 
     // Sätt in den nya användaren i databasen
-    await database.run(
-      'INSERT INTO users (token, email, password, name, adress) VALUES (?, ?, ?, ?, ?)',
-      [token, email, password, name, adress]
+    await client.query(
+      'INSERT INTO users (token, email, password, name) VALUES ($1, $2, $3, $4)',
+      [token, email, password, name]
     );
 
     response.status(201).json({ message: 'Registrering lyckades', token });
@@ -93,9 +101,10 @@ app.post('/register', async (request, response) => {
 app.post('/login', async (request, response) => {
   const { email, password } = request.body;
   // hämta en user från databas där email är samma som skrivs in
+
   try {
-    const user = await database.get('SELECT * FROM users WHERE email = ?',
-      [email]);
+    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
 
     if (!user || password !== user.password) {
       return response.status(401).json({ error: 'Fel e-post eller lösenord' });
@@ -104,8 +113,7 @@ app.post('/login', async (request, response) => {
     const token = uuidv4();
 
     // Uppdatera token i databasen
-    await database.run('UPDATE users SET token = ? WHERE id = ?',
-      [token, user.id]);
+    await client.query('UPDATE users SET token = $1 WHERE id = $2', [token, user.id]);
 
     response.json({ message: 'Inloggad', token, email });
   } catch (error) {
@@ -116,27 +124,32 @@ app.post('/login', async (request, response) => {
 
 // GET user
 app.get('/user', authenticate, async (request, response) => {
-  const userId = request.user;
-  const user = await database.get('SELECT id, name, email, adress FROM users WHERE id = ?',
-    [userId]
-  );
+  const userId = (request as any).user;
 
-  if (!user) {
-    return response.status(404).json({ error: 'Användare hittades inte' });
+  try {
+    const result = await client.query(
+      'SELECT id, name, email, adress FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return response.status(404).json({ error: 'Användare hittades inte' });
+    }
+
+    response.json(result.rows[0]);
+  } catch (error) {
+    console.error('Fel vid hämtning av användare:', error);
+    response.status(500).json({ error: 'Serverfel' });
   }
-
-  response.json(user);
 });
 
 // POST med UPDATE Logout 
 app.post('/logout', authenticate, async (request, response) => {
-  const token = request.query.token;
+  const token = request.query.token as string;
 
   try {
     // Loggar ut genom att sätta token till null
-    await database.run('UPDATE users SET token = NULL WHERE token = ?',
-      [token]);
-
+    await client.query('UPDATE users SET token = NULL WHERE token = $1', [token]);
     response.status(200).json({ message: 'Utloggad' });
   } catch (error) {
     console.error('Fel vid utloggning:', error);
@@ -145,15 +158,15 @@ app.post('/logout', authenticate, async (request, response) => {
 });
 
 // GET tasks
-app.get('/tasks', async (request, response) => {
+app.get('/tasks', async (_request, response) => {
   try {
-    const tasks = await database.all('SELECT * FROM tasks');
+    const result = await client.query('SELECT * FROM tasks');
 
-    if (!tasks || tasks.length === 0) {
+    if (result.rows.length === 0) {
       return response.status(404).send('Inga uppgifter hittades');
     }
 
-    response.status(200).json(tasks);
+    response.status(200).json(result.rows);
   } catch (error) {
     console.error('Fel i backend:', error);
     response.status(500).send('Serverfel vid hämtning av uppgifter');
@@ -161,18 +174,21 @@ app.get('/tasks', async (request, response) => {
 });
 
 // GET events
-app.get('/events', async (req, res) => {
+app.get('/events', async (_request, response) => {
   try {
-    const events = await database.all('SELECT * FROM events');
-    res.json(events);
+    const result = await client.query('SELECT * FROM events');
+    response.json(result.rows);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Kunde inte hämta events' });
+    response.status(500).json({ error: 'Kunde inte hämta events' });
   }
 });
 
+*/
 
-// Starta servern
+// Servera frontend från dist-mappen
+app.use(express.static(path.join(path.resolve(), 'dist')))
+
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Servern körs på http://localhost:${port}`);
 });

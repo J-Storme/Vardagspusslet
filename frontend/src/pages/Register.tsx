@@ -27,7 +27,7 @@ function Register() {
       });
 
       // Logga svaret för att kontrollera vad servern returnerar
-      const textData = await response.text();
+      const textData = await response.json();
       console.log('Response text:', textData);
 
       const data = textData ? JSON.parse(textData) : {};

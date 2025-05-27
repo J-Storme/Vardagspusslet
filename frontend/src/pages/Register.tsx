@@ -27,10 +27,8 @@ function Register() {
       });
 
       // Logga svaret för att kontrollera vad servern returnerar
-      const textData = await response.json();
-      console.log('Response text:', textData);
-
-      const data = textData ? JSON.parse(textData) : {};
+      const data = await response.json();
+      console.log('Response text:', data);
 
       if (!response.ok) {
         setError(data.error || 'Kunde inte registrera användare');
@@ -41,9 +39,10 @@ function Register() {
       localStorage.setItem('token', data.token); // Använd token som returnerades vid registreringen
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userName', name);
+      localStorage.setItem('userId', data.id.toString());
 
       // Logga in användaren direkt
-      login(data.token, data.email, data.name);
+      login(data.token, data.email, data.name, data.id);
       navigate('/'); // Navigera till home efter inloggning
 
     } catch (error) {

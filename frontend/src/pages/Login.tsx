@@ -109,19 +109,7 @@ function Login() {
         <p>Har du inget konto?</p>
         <button onClick={handleRegisterRedirect}>Registrera dig</button>
       </div>
-      {token && (
-        <>
-          <h3>Din profil</h3>
-          <label>Namn:</label>
-          <input
-            type="text"
-            value={editName}
-            onChange={(event) => setEditName(event.target.value)}
-          />
-          <button onClick={handleSave}>Spara ändringar</button>
-          {message && <p>{message}</p>}
-        </>
-      )}
+
     </LoginContainer>
   );
 }

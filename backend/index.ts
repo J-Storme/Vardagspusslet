@@ -87,7 +87,7 @@ app.get('/api', (_request, response) => {
   response.send({ test: 'test' })
 })
 
-// POST & INSERT, registera användare
+// POST & INSERT, registera användare FUNKAR!
 app.post('/api/register', async (request, response) => {
   const { email, password, name } = request.body;
   const token = uuidv4();
@@ -106,7 +106,7 @@ app.post('/api/register', async (request, response) => {
       [token, email, password, name]
     );
 
-    return response.status(201).json({ message: 'Registrering lyckades', token });
+    return response.status(201).json({ message: 'Registrering lyckades', token, name, email });
 
   } catch (error) {
     console.error('Fel vid registrering:', error);
@@ -133,7 +133,7 @@ app.post('/api/login', async (request, response) => {
     // Uppdatera token i databasen
     await client.query('UPDATE users SET token = $1 WHERE id = $2', [token, user.id]);
     response.json({
-      message: 'Inloggad', token, email: user.email, name: user.household_username, id: user.id
+      message: 'Inloggad', token, email: user.email, name: user.name, id: user.id
     });
 
   } catch (error) {
@@ -198,7 +198,7 @@ app.post('/api/family-members', authenticate, async (request, response) => {
   }
 });
 
-/*
+
 // POST med UPDATE Logout 
 app.post('/logout', authenticate, async (request, response) => {
   const token = request.query.token as string;
@@ -215,7 +215,7 @@ app.post('/logout', authenticate, async (request, response) => {
 
 
 // GET tasks
-app.get('/tasks', async (_request, response) => {
+app.get('/api/tasks', async (_request, response) => {
   try {
     const result = await client.query('SELECT * FROM tasks');
 
@@ -231,7 +231,7 @@ app.get('/tasks', async (_request, response) => {
 });
 
 // GET events
-app.get('/events', async (_request, response) => {
+app.get('/api/events', async (_request, response) => {
   try {
     const result = await client.query('SELECT * FROM events');
     response.json(result.rows);

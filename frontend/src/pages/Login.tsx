@@ -24,7 +24,7 @@ function Login() {
     }
 
     try {
-      const response = await fetch('http://localhost:8080/login', {
+      const response = await fetch('http://localhost:8080/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -43,7 +43,9 @@ function Login() {
       localStorage.setItem('userName', data.name || '');
       localStorage.setItem('userId', data.id.toString());
 
+      // Logg ain och skicka vidare till sidan Home
       login(data.token, data.email, data.name, data.id);
+      navigate('/');
 
     } catch (error) {
       console.error('Inloggningsfel:', error);

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useLogin } from '../context/LoginContext';
 
 interface FamilyMember {
   id: number;
@@ -14,12 +15,21 @@ const Account = () => {
   const [editId, setEditId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
+  const [userName, setUserName] = useState<string>('');
 
   const token = localStorage.getItem('token');
 
-  // Hämta från backend
+  // Hämta suerName från local storage
   useEffect(() => {
-  if (!token) return;
+    const storedName = localStorage.getItem('userName');
+    if (storedName) {
+      setUserName(storedName);
+    }
+  }, []);
+
+  // Hämta familjemedlemar från backend
+  useEffect(() => {
+    if (!token) return;
 
     const fetchMembers = async () => {
       try {
@@ -43,7 +53,7 @@ const Account = () => {
     fetchMembers();
   }, [token]);
 
-   const addMember = async () => {
+  const addMember = async () => {
     if (newName.trim() === '') return;
 
     try {
@@ -95,7 +105,7 @@ const Account = () => {
     setEditRole('');
   };
 
-    const deleteMember = async (id: number) => {
+  const deleteMember = async (id: number) => {
     if (!window.confirm('Vill du verkligen ta bort denna familjemedlem?')) return;
 
     try {
@@ -119,6 +129,7 @@ const Account = () => {
   return (
     <Container>
       <h2>Hantera familjemedlemmar</h2>
+      <p>Lägg till medlemmar i hushåll {userName}</p>
 
       <AddMemberSection>
         <input
@@ -144,12 +155,12 @@ const Account = () => {
               <input
                 type="text"
                 value={editName}
-                 onChange={(event) => setEditName(event.target.value)}
+                onChange={(event) => setEditName(event.target.value)}
               />
               <input
                 type="text"
                 value={editRole}
-                  onChange={(event) => setEditRole(event.target.value)}
+                onChange={(event) => setEditRole(event.target.value)}
               />
               <button onClick={saveEdit}>Spara</button>
               <button onClick={cancelEdit}>Avbryt</button>
@@ -177,17 +188,27 @@ export default Account;
 
 const Container = styled.div`
   max-width: 500px;
-  margin: 20px auto;
+  margin: 40px auto;
   padding: 10px;
   background-color: white;
   border-radius: 6px;
   box-shadow: 0 0 8px rgba(0,0,0,0.1);
+
+h2 {
+margin-top: 20px;
+}
+
+p {
+margin-top: 28px;
+margin-bottom: 10px;
+}
 `;
 
 const AddMemberSection = styled.div`
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 40px;
   input {
     flex: 1;
     padding: 6px 10px;

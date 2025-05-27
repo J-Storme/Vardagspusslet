@@ -254,6 +254,7 @@ app.get('/api/events', async (_request, response) => {
   try {
     const result = await client.query('SELECT * FROM events');
     response.json(result.rows);
+
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: 'Kunde inte hämta events' });

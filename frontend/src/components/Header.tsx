@@ -10,7 +10,7 @@ function Header() {
       <LogoContainer><h1>Vardagspusslet</h1>
         <img src="/logo.png" alt="logo" />
       </LogoContainer>
-      {isLoggedIn && <WelcomeText>Inloggad som {userName}!</WelcomeText>}
+      {isLoggedIn && <WelcomeText>Inloggad som hushåll {userName}!</WelcomeText>}
     </HeaderContainer>
   );
 }

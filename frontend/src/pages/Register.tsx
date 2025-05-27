@@ -104,7 +104,7 @@ const LabelRow = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-
+  
   label {
     font-weight: bold;
     width: 100px; 

@@ -13,20 +13,29 @@ function CalendarView() {
       .then(data => setEvents(data));
   }, []);
 
+  // För att filtrera dagens händelser
+  const todaysEvents = events.filter(e =>
+    date && new Date(e.date).toDateString() === date.toDateString()
+  );
+
   return (
     <div>
       <CalendarContainer>
         <Calendar value={date} onChange={(value) => {
           if (value instanceof Date) setDate(value);
         }} />
-        <h3>Dagens händelser:</h3>
-        <ul>
-          {date &&
-            events
-              .filter(e => new Date(e.date).toDateString() === date.toDateString())
-              .map(e => <li key={e.id}>{e.title}</li>)
-          }
-        </ul>
+        {date && (
+          todaysEvents.length > 0 ? (
+            <>
+              <h3>Dagens händelser:</h3>
+              <ul>
+                {todaysEvents.map(e => (
+                  <li key={e.id}>{e.title}</li>
+                ))}
+              </ul>
+            </>
+          ) : (<p>Du har inga händelser.</p>)
+        )}
       </CalendarContainer>
     </div>
   );

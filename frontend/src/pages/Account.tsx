@@ -15,31 +15,62 @@ const Account = () => {
   const [editName, setEditName] = useState('');
   const [editRole, setEditRole] = useState('');
 
-  // Läs in från localStorage när komponenten mountas
+  const token = localStorage.getItem('token');
+
+  // Hämta från backend
   useEffect(() => {
-    const savedMembers = localStorage.getItem('familyMembers');
-    if (savedMembers) {
-      console.log('test')
-      setMembers(JSON.parse(savedMembers));
+  if (!token) return;
 
-    }
-  }, []);
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch('/api/family-members', {
+          headers: {
+            'Authorization': `Bearer ${token}` // Eller bara token
+          }
+        });
 
-  // Spara till localStorage varje gång members ändras
-  useEffect(() => {
-    localStorage.setItem('familyMembers', JSON.stringify(members));
-  }, [members]);
+        if (!response.ok) {
+          throw new Error('Misslyckades med att hämta familjemedlemmar');
+        }
 
-  const addMember = () => {
-    if (newName.trim() === '') return;
-    const newMember: FamilyMember = {
-      id: Date.now(),
-      name: newName.trim(),
-      role: newRole.trim(),
+        const data = await response.json();
+        setMembers(data);
+      } catch (error) {
+        console.error(error);
+      }
     };
-    setMembers([...members, newMember]);
-    setNewName('');
-    setNewRole('');
+
+    fetchMembers();
+  }, [token]);
+
+   const addMember = async () => {
+    if (newName.trim() === '') return;
+
+    try {
+      const response = await fetch('/api/family-members', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token || ''
+        },
+        body: JSON.stringify({
+          name: newName.trim(),
+          role: newRole.trim(),
+          profile_image: null
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Kunde inte lägga till familjemedlem');
+      }
+
+      const newMember = await response.json();
+      setMembers([...members, newMember]);
+      setNewName('');
+      setNewRole('');
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const startEditing = (member: FamilyMember) => {
@@ -64,9 +95,24 @@ const Account = () => {
     setEditRole('');
   };
 
-  const deleteMember = (id: number) => {
-    if (window.confirm('Vill du verkligen ta bort denna familjemedlem?')) {
+    const deleteMember = async (id: number) => {
+    if (!window.confirm('Vill du verkligen ta bort denna familjemedlem?')) return;
+
+    try {
+      const response = await fetch(`/api/family-members/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token || ''
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Kunde inte ta bort familjemedlem');
+      }
+
       setMembers(members.filter((m) => m.id !== id));
+    } catch (error) {
+      console.error(error);
     }
   };
 
@@ -81,12 +127,11 @@ const Account = () => {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
-        <input
-          type="text"
-          placeholder="Roll (t.ex. vuxen, barn)"
-          value={newRole}
-          onChange={(e) => setNewRole(e.target.value)}
-        />
+        <select value={newRole} onChange={(e) => setNewRole(e.target.value)}>
+          <option value="">Välj roll</option>
+          <option value="vuxen">Vuxen</option>
+          <option value="barn">Barn</option>
+        </select>
         <button onClick={addMember}>Lägg till</button>
       </AddMemberSection>
 
@@ -99,12 +144,12 @@ const Account = () => {
               <input
                 type="text"
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
+                 onChange={(event) => setEditName(event.target.value)}
               />
               <input
                 type="text"
                 value={editRole}
-                onChange={(e) => setEditRole(e.target.value)}
+                  onChange={(event) => setEditRole(event.target.value)}
               />
               <button onClick={saveEdit}>Spara</button>
               <button onClick={cancelEdit}>Avbryt</button>

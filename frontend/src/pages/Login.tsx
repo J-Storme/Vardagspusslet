@@ -41,8 +41,9 @@ function Login() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('userEmail', data.email);
       localStorage.setItem('userName', data.name || '');
+      localStorage.setItem('userId', data.id);
 
-      login(data.token, data.email, data.name);
+      login(data.token, data.email, data.name, data.id);
 
     } catch (error) {
       console.error('Inloggningsfel:', error);

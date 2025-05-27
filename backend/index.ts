@@ -5,13 +5,26 @@ import cors from 'cors'
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 
+interface UserRequest extends Request {
+  user?: {
+    id: number;
+    email: string;
+    name: string;
+    token?: string;
+  };
+}
+
 // Läs in miljövariabler från .env-fil
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 8080;
 
-app.use(cors()); // middleware som löser cors
+// middleware som löser cors
+app.use(cors(/*{
+  origin: 'http://localhost:5173',
+  credentials: true
+}*/));
 app.use(express.json()); // middleware för att tolka JSON-body
 
 // Anslut till PostgreSQL-databas
@@ -24,24 +37,38 @@ const client = new Client({
 client.connect();
 
 // Middleware för att autentisera token
-async function authenticate(request: Request, response: Response, next: NextFunction) {
+async function authenticate(request: UserRequest, response: Response, next: NextFunction) {
   // Hämta token från query-parametern eller authorization-headren
-  const token = request.query.token as string || request.headers.authorization;
+  let token = request.query.token as string || request.headers.authorization;
+
+  if (token && token?.startsWith('Bearer ')) {
+    token = token.slice(7); // Tar bort "Bearer "
+  }
+
+  console.log('Token i middleware-kontrollen:', token);
 
   if (!token) {
     return response.status(401).json({ error: 'Token saknas' });
   }
+
   try {
     // Hämta användaren baserat på token
-    const user = await client.query('SELECT * FROM users WHERE token = $1', [token]);
+    const result = await client.query('SELECT * FROM users WHERE token = $1', [token]);
+    const user = result.rows[0];
 
 
-    if (user.rows.length === 0) {
+    if (!user) {
       return response.status(401).json({ error: 'Ogiltig token' });
     }
 
-    // Spara användarens ID i request-objektet
-    (request as any).user = user.rows[0].id;
+    // Spara användaren i request-objektet
+    (request as UserRequest).user = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      token: user.token,
+    };
+
     next(); // Släpp vidare till nästa middleware eller route
   } catch (error) {
     console.error('Fel vid autentisering:', error);
@@ -49,8 +76,6 @@ async function authenticate(request: Request, response: Response, next: NextFunc
   }
 }
 
-// Token-hantering
-const tokens: { [email: string]: string } = {};
 
 // GET
 app.get('/', (_request, response) => {
@@ -58,21 +83,12 @@ app.get('/', (_request, response) => {
 });
 
 // GET api
-app.get("/api", (_request, response) => {
-  response.send({ test: "test" })
+app.get('/api', (_request, response) => {
+  response.send({ test: 'test' })
 })
 
-
-
-/*
-GET / events              // Hämta alla
-POST / events             // Lägg till nytt event
-DELETE / events /: id       // Ta bort ett event
-*/
-
-/*
 // POST & INSERT, registera användare
-app.post('/register', async (request, response) => {
+app.post('/api/register', async (request, response) => {
   const { email, password, name } = request.body;
   const token = uuidv4();
 
@@ -90,18 +106,19 @@ app.post('/register', async (request, response) => {
       [token, email, password, name]
     );
 
-    response.status(201).json({ message: 'Registrering lyckades', token });
+    return response.status(201).json({ message: 'Registrering lyckades', token });
+
   } catch (error) {
     console.error('Fel vid registrering:', error);
-    response.status(500).json({ error: 'Kunde inte registrera användare' });
+    return response.status(500).json({ error: 'Kunde inte registrera användare' });
   }
 });
 
 // POST login
-app.post('/login', async (request, response) => {
+app.post('/api/login', async (request, response) => {
   const { email, password } = request.body;
-  // hämta en user från databas där email är samma som skrivs in
 
+  // hämta en user från databas där email är samma som skrivs in
   try {
     const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
     const user = result.rows[0];
@@ -109,13 +126,16 @@ app.post('/login', async (request, response) => {
     if (!user || password !== user.password) {
       return response.status(401).json({ error: 'Fel e-post eller lösenord' });
     }
+
     // Skapa en token
     const token = uuidv4();
 
     // Uppdatera token i databasen
     await client.query('UPDATE users SET token = $1 WHERE id = $2', [token, user.id]);
+    response.json({
+      message: 'Inloggad', token, email: user.email, name: user.household_username, id: user.id
+    });
 
-    response.json({ message: 'Inloggad', token, email });
   } catch (error) {
     console.error('Fel vid inloggning:', error);
     response.status(500).json({ error: 'Något gick fel vid inloggning' });
@@ -123,8 +143,8 @@ app.post('/login', async (request, response) => {
 });
 
 // GET user
-app.get('/user', authenticate, async (request, response) => {
-  const userId = (request as any).user;
+app.get('/api/user', authenticate, async (request, response) => {
+  const userId = (request as UserRequest).user?.id;
 
   try {
     const result = await client.query(
@@ -143,6 +163,42 @@ app.get('/user', authenticate, async (request, response) => {
   }
 });
 
+// GET api Hämta familjemedlemmar
+app.get('/api/family-members', authenticate, async (request, response) => {
+  const userId = (request as UserRequest).user?.id;
+
+  console.log('Hämtar familjemedlemmar för användare:', userId);
+
+  try {
+    const result = await client.query(
+      'SELECT * FROM family_members WHERE user_id = $1',
+      [userId]
+    );
+    response.json(result.rows);
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ error: 'Kunde inte hämta familjemedlemmar.' });
+  }
+});
+
+// POST Lägga till familjemedlem
+app.post('/api/family-members', authenticate, async (request, response) => {
+  const { name, role, profile_image } = request.body;
+  const userId = (request as UserRequest).user?.id;
+
+  try {
+    const result = await client.query(
+      'INSERT INTO family_members (user_id, name, role, profile_image) VALUES ($1, $2, $3, $4) RETURNING *',
+      [userId, name, role, profile_image || null]
+    );
+    response.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ error: 'Kunde inte spara familjemedlem.' });
+  }
+});
+
+/*
 // POST med UPDATE Logout 
 app.post('/logout', authenticate, async (request, response) => {
   const token = request.query.token as string;
@@ -156,6 +212,7 @@ app.post('/logout', authenticate, async (request, response) => {
     response.status(500).json({ error: 'Kunde inte logga ut' });
   }
 });
+
 
 // GET tasks
 app.get('/tasks', async (_request, response) => {
@@ -184,7 +241,13 @@ app.get('/events', async (_request, response) => {
   }
 });
 
+/*
+GET / events              // Hämta alla
+POST / events             // Lägg till nytt event
+DELETE / events /: id       // Ta bort ett event
 */
+
+
 
 // Servera frontend från dist-mappen
 app.use(express.static(path.join(path.resolve(), 'dist')))

@@ -37,13 +37,13 @@ function Navbar() {
         </NavbarItem>
 
         <NavbarItem>
-          <NavbarLink to="/managefamilymembers">Hantera konto</NavbarLink>
+          <NavbarLink to="/account">Hantera konto</NavbarLink>
         </NavbarItem>
       </NavbarList>
 
       <TasksIconContainer>
         <TasksIconWithHover>
-          <Link to="/checkout">
+          <Link to="/tasks">
           </Link>
         </TasksIconWithHover>
       </TasksIconContainer>

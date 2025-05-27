@@ -6,6 +6,7 @@ interface LoginContextType {
   token: string | null;
   userEmail: string | null;
   userName: string | null;
+  userId: number | null;
   login: (token: string, email: string, name: string) => void;
   logout: () => void;
   isLoggedIn: boolean; // Flagga som visar om användaren är inloggad

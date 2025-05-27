@@ -14,6 +14,7 @@ interface UserRequest extends Request {
   };
 }
 
+
 // Läs in miljövariabler från .env-fil
 dotenv.config();
 
@@ -56,7 +57,6 @@ async function authenticate(request: UserRequest, response: Response, next: Next
     const result = await client.query('SELECT * FROM users WHERE token = $1', [token]);
     const user = result.rows[0];
 
-
     if (!user) {
       return response.status(401).json({ error: 'Ogiltig token' });
     }
@@ -82,6 +82,7 @@ app.get('/', (_request, response) => {
   response.send('root');
 });
 
+
 // GET api
 app.get('/api', (_request, response) => {
   response.send({ test: 'test' })
@@ -106,13 +107,28 @@ app.post('/api/register', async (request, response) => {
       [token, email, password, name]
     );
 
-    return response.status(201).json({ message: 'Registrering lyckades', token, name, email });
+    // Hämta den nya användaren
+    const selectResult = await client.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+
+    const newUser = selectResult.rows[0];
+
+    return response.status(201).json({
+      message: 'Registrering lyckades',
+      token: newUser.token,
+      name: newUser.name,
+      email: newUser.email,
+      id: newUser.id
+    });
 
   } catch (error) {
     console.error('Fel vid registrering:', error);
     return response.status(500).json({ error: 'Kunde inte registrera användare' });
   }
 });
+
 
 // POST login
 app.post('/api/login', async (request, response) => {
@@ -142,6 +158,7 @@ app.post('/api/login', async (request, response) => {
   }
 });
 
+
 // GET user
 app.get('/api/user', authenticate, async (request, response) => {
   const userId = (request as UserRequest).user?.id;
@@ -163,6 +180,7 @@ app.get('/api/user', authenticate, async (request, response) => {
   }
 });
 
+
 // GET api Hämta familjemedlemmar
 app.get('/api/family-members', authenticate, async (request, response) => {
   const userId = (request as UserRequest).user?.id;
@@ -180,6 +198,7 @@ app.get('/api/family-members', authenticate, async (request, response) => {
     response.status(500).json({ error: 'Kunde inte hämta familjemedlemmar.' });
   }
 });
+
 
 // POST Lägga till familjemedlem
 app.post('/api/family-members', authenticate, async (request, response) => {

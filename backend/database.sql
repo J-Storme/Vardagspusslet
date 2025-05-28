@@ -56,5 +56,14 @@ description TEXT,
 due_date DATE, 
 completed BOOLEAN DEFAULT FALSE, 
 event_id INTEGER REFERENCES events(id), 
-family_member_id INTEGER REFERENCES family_members(id) 
 );
+
+-- kopplingstabell tasks_family_members (flera familjemedlemmar kan kopplas till en uppgift)
+DROP TABLE IF EXISTS task_family_members;
+CREATE TABLE task_family_members (
+  task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+  family_member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE,
+  PRIMARY KEY (task_id, family_member_id)
+);
+
+--On Delete cascade = Om den refererade raden tas bort, så tas automatiskt alla kopplade rader i denna tabell bort.

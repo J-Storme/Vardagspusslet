@@ -30,8 +30,8 @@ export const LogoContainer = styled.div`
   justify-content: center;
   gap: 10px;
   margin: 0;
-  padding: 14px 0px;
-  background-color: rgb(233, 231, 248);
+  padding: 24px 0px;
+  background-color: rgb(222, 217, 243);
   img {
     height: 60px;
   }

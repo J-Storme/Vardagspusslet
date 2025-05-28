@@ -8,9 +8,30 @@ function CalendarView() {
   const [events, setEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('http://localhost:8080/events')
-      .then(res => res.json())
-      .then(data => setEvents(data));
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    fetch('http://localhost:8080/api/events', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Ej auktoriserad');
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (!Array.isArray(data)) {
+          throw new Error('Felaktigt format, ska vara en array');
+        }
+        console.log(data)
+        setEvents(data);
+      })
+      .catch(error => {
+        console.error('Fel vid hämtning av events:', error);
+      });
   }, []);
 
   // För att filtrera dagens händelser

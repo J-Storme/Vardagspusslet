@@ -14,7 +14,7 @@ function Navbar() {
           <NavbarLink to="/">Hem</NavbarLink>
           <DropdownMenu>
             <DropdownItem>
-              <Link to="/tasks">Tasks</Link>
+              <Link to="/tasks">Uppgifter</Link>
             </DropdownItem>
             {!isLoggedIn && (
               <DropdownItem>

@@ -67,3 +67,10 @@ CREATE TABLE task_family_members (
 );
 
 --On Delete cascade = Om den refererade raden tas bort, så tas automatiskt alla kopplade rader i denna tabell bort.
+
+DROP TABLE IF EXISTS event_family_members;
+CREATE TABLE event_family_members (
+  event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+  family_member_id INTEGER REFERENCES family_members(id) ON DELETE CASCADE,
+  PRIMARY KEY (event_id, family_member_id)
+);

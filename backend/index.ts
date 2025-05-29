@@ -514,8 +514,24 @@ app.delete('/api/tasks/:id', authenticate, async (request, response) => {
 // GET events
 app.get('/api/events', authenticate, async (_request, response) => {
   try {
-    const result = await client.query('SELECT * FROM events');
-    response.json(result.rows);
+    const eventsResult = await client.query('SELECT * FROM events ORDER BY event_date ASC');
+    const events = eventsResult.rows;
+
+    // Hämta familjemedlemmar kopplade till varje event
+    for (const event of events) {
+      const familyResult = await client.query(
+        `SELECT family_members.id, family_members.name, family_members.role, family_members.profile_image
+         FROM event_family_members
+         JOIN family_members ON event_family_members.family_member_id = family_members.id
+         WHERE event_family_members.event_id = $1`,
+        [event.id]
+      );
+      //event.family_member_ids = familyResult.rows.map(row => row.family_member_id);
+      event.family_member_ids = familyResult.rows.map(row => row.id);
+      event.family_members = familyResult.rows;
+    }
+
+    response.json(events);
 
   } catch (error) {
     console.error(error);
@@ -523,29 +539,57 @@ app.get('/api/events', authenticate, async (_request, response) => {
   }
 });
 
-
 // POST events
 app.post('/api/events', authenticate, async (request, response) => {
-  const { title, date, description, user_id } = request.body;
+  const { title, event_date, description, user_id, family_member_ids } = request.body;
 
+  // Kontroll att minst en familjemedlem är kopplad
+  if (!family_member_ids || !Array.isArray(family_member_ids) || family_member_ids.length === 0) {
+    return response.status(400).json({ error: 'Minst en familjemedlem måste kopplas till eventet' });
+  }
+
+  // Skapa event
   try {
-    // Lägg till nytt event i databasen
-    await client.query(
-      'INSERT INTO events (title, date, description, user_id) VALUES ($1, $2, $3, $4)',
-      [title, date, description, user_id]
+    const insertEventResult = await client.query(
+      'INSERT INTO events (title, event_date, description, user_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [title, event_date, description, user_id]
+    );
+    const newEvent = insertEventResult.rows[0];
+
+    // Lägg till kopplingar i event_family_members
+    for (const familyMemberId of family_member_ids) {
+      await client.query(
+        'INSERT INTO event_family_members (event_id, family_member_id) VALUES ($1, $2)',
+        [newEvent.id, familyMemberId]
+      );
+    }
+
+    // Hämta event inklusive kopplade family_member_ids
+    //const eventFamilyResult = await client.query( Kan ev utesluta role
+    const familyMembersResult = await client.query(
+      `SELECT family_members.id, family_members.name, family_members.role, family_members.profile_image
+      FROM family_members
+      JOIN event_family_members ON family_members.id = event_family_members.family_member_id
+      WHERE event_family_members.event_id = $1`,
+      [newEvent.id]
     );
 
-    // Hämta alla events för samma användare efter att det nya lagts till
-    const result = await client.query(
-      'SELECT * FROM events WHERE user_id = $1 ORDER BY date ASC', // ASC = äldsta först
-      [user_id]
-    );
+    //const familyMemberIds = eventFamilyResult.rows.map(row => row.family_member_id);
+    const familyMembers = familyMembersResult.rows;
+    console.log('Hämtade familjemedlemmar:', familyMembers);
 
-    response.status(201).json(result.rows);
+    // Skapa array med bara ids
+    const familyMemberIds = familyMembers.map(fm => fm.id);
+
+    response.status(201).json({
+      ...newEvent,
+      family_member_ids: familyMemberIds, //felsök
+      family_members: familyMembers
+    });
 
   } catch (error) {
-    console.error('Fel vid skapande av event:', error);
-    response.status(500).json({ error: 'Kunde inte spara event.' });
+    console.error(error);
+    response.status(500).json({ error: 'Kunde inte skapa event' });
   }
 });
 

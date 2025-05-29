@@ -134,7 +134,6 @@ function Tasks() {
 
     console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
 
-
     fetch('http://localhost:8080/api/tasks', {
       method: 'POST',
       headers: {
@@ -166,6 +165,7 @@ function Tasks() {
         alert('Något gick fel när uppgiften skulle sparas');
       });
   }
+
 
   // Funktion för att uppdatera en uppgift (t.ex. bocka av, ändra info)
   function updateTask(updatedTask: Task) {
@@ -368,7 +368,7 @@ function Tasks() {
                   return member ? member.name : "Okänd medlem";
                 }).join(", ");
 
-                return <p>Tilldelad: {assignedNames}</p>;
+                return <p> {assignedNames}</p>;
               })()
             ) : (
               <p>Ofördelad uppgift</p>

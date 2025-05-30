@@ -34,6 +34,8 @@ id SERIAL PRIMARY KEY,
 title TEXT NOT NULL,
 description TEXT,
 event_date DATE NOT NULL,
+start_time TIME,
+end_time TIME,
 user_id INTEGER REFERENCES users(id), 
 family_member_id INTEGER REFERENCES family_members(id), 
 category_id INTEGER REFERENCES categories(id)  
@@ -55,7 +57,8 @@ title TEXT NOT NULL,
 description TEXT,
 due_date DATE, 
 completed BOOLEAN DEFAULT FALSE, 
-event_id INTEGER REFERENCES events(id), 
+event_id INTEGER REFERENCES events(id) 
+recurring_weekday INTEGER
 );
 
 -- kopplingstabell tasks_family_members (flera familjemedlemmar kan kopplas till en uppgift)

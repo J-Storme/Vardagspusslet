@@ -307,6 +307,37 @@ app.post('/logout', authenticate, async (request, response) => {
 
 
 // GET tasks
+app.get('/api/tasks', authenticate, async (_request, response) => {
+  try {
+    // Hämta alla tasks (kan lägga till ORDER BY om du vill sortera)
+    const tasksResult = await client.query('SELECT * FROM tasks ORDER BY due_date ASC');
+    const tasks = tasksResult.rows;
+
+    // Hämta familjemedlemmar kopplade till varje task
+    for (const task of tasks) {
+      const familyResult = await client.query(
+        `SELECT family_members.id, family_members.name, family_members.role, family_members.profile_image
+         FROM task_family_members
+         JOIN family_members ON task_family_members.family_member_id = family_members.id
+         WHERE task_family_members.task_id = $1`,
+        [task.id]
+      );
+
+      // Spara id:n och hela familjemedlemsobjektet i task
+      task.family_member_ids = familyResult.rows.map(row => row.id);
+      task.family_members = familyResult.rows;
+    }
+
+    // Skicka tillbaka tasks med familjemedlemmar
+    response.json(tasks);
+
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ error: 'Kunde inte hämta tasks' });
+  }
+});
+
+/*
 app.get('/api/tasks', authenticate, async (request, response) => {
   const userId = (request as UserRequest).user?.id;
 
@@ -336,7 +367,7 @@ app.get('/api/tasks', authenticate, async (request, response) => {
     console.error('Fel vid hämtning av uppgifter:', error);
     response.status(500).send('Serverfel vid hämtning av uppgifter');
   }
-});
+}); */
 
 
 // POST tasks
@@ -541,7 +572,7 @@ app.get('/api/events', authenticate, async (_request, response) => {
 
 // POST events
 app.post('/api/events', authenticate, async (request, response) => {
-  const { title, event_date, description, user_id, family_member_ids } = request.body;
+  const { title, event_date, start_time, end_time, description, user_id, family_member_ids } = request.body;
 
   // Kontroll att minst en familjemedlem är kopplad
   if (!family_member_ids || !Array.isArray(family_member_ids) || family_member_ids.length === 0) {
@@ -551,8 +582,8 @@ app.post('/api/events', authenticate, async (request, response) => {
   // Skapa event
   try {
     const insertEventResult = await client.query(
-      'INSERT INTO events (title, event_date, description, user_id) VALUES ($1, $2, $3, $4) RETURNING *',
-      [title, event_date, description, user_id]
+      'INSERT INTO events (title, event_date, end_time, start_time, description, user_id) VALUES ($1, $2, $3, $4, $5, $6 ) RETURNING *',
+      [title, event_date, end_time, start_time, description, user_id]
     );
     const newEvent = insertEventResult.rows[0];
 
@@ -622,6 +653,44 @@ app.delete('/api/events/:id', authenticate, async function (request, response) {
   } catch (error) {
     console.error('Fel vid borttagning av event:', error);
     response.status(500).json({ error: 'Kunde inte ta bort event' });
+  }
+});
+
+
+//Vecko-tasks
+app.get('/api/week-tasks', authenticate, async (_request, response) => {
+  try {
+    // Räkna fram datum för veckans måndag och söndag (serverns tid)
+    const now = new Date();
+    const day = now.getDay(); // 0 = söndag, 1 = måndag...
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); // Räkna ut måndag
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    // Formatera till yyyy-mm-dd för SQL
+    const mondayStr = monday.toISOString().slice(0, 10);
+    const sundayStr = sunday.toISOString().slice(0, 10);
+
+    // Hämta engångs-uppgifter i denna vecka
+    const singleTasksResult = await client.query(
+      `SELECT * FROM tasks WHERE due_date BETWEEN $1 AND $2 ORDER BY due_date`,
+      [mondayStr, sundayStr]
+    );
+    const singleTasks = singleTasksResult.rows;
+
+    // Hämta återkommande tasks (recurring_weekday 0-6)
+    const recurringTasksResult = await client.query(
+      `SELECT * FROM tasks WHERE recurring_weekday IS NOT NULL ORDER BY recurring_weekday`
+    );
+    const recurringTasks = recurringTasksResult.rows;
+
+    // Skicka tillbaka båda listorna
+    response.json({ singleTasks, recurringTasks });
+
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ error: 'Kunde inte hämta veckans tasks' });
   }
 });
 

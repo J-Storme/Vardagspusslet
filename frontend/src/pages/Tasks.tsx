@@ -233,15 +233,15 @@ function Tasks() {
       });
   }
 
-
-  // Checkbox-hantering familjemedlemmar
-  function handleUserCheckboxChange(userId: number, isChecked: boolean) {
-    if (isChecked) {
-      setNewSelectedFamilyMemberIds(prev => [...prev, userId]);
-    } else {
-      setNewSelectedFamilyMemberIds(prev => prev.filter(id => id !== userId));
-    }
-  }
+  /*
+    // Checkbox-hantering familjemedlemmar
+    function handleUserCheckboxChange(userId: number, isChecked: boolean) {
+      if (isChecked) {
+        setNewSelectedFamilyMemberIds(prev => [...prev, userId]);
+      } else {
+        setNewSelectedFamilyMemberIds(prev => prev.filter(id => id !== userId));
+      }
+    } */
 
 
   // Events ändringar
@@ -258,10 +258,10 @@ function Tasks() {
   if (loading) return <p>Laddar uppgifter...</p>;
   if (error) return <p>{error}</p>;
 
+
   return (
     <Container>
       <h2>Uppgifter</h2>
-
       <div>
         <label>Filtrera på familjemedlem: </label>
         <select
@@ -348,6 +348,7 @@ function Tasks() {
         <button type="button" onClick={addTask}>Lägg till uppgift</button>
       </Form>
 
+      { /* Visnings-lista av uppgifter/ tasks */}
       <TaskList>
         {filteredTasks.map(task => (
           <TaskItem key={task.id}>
@@ -357,7 +358,10 @@ function Tasks() {
               onChange={() => toggleTaskCompleted(task.id)}
             />
             <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
-            {task.due_date && <DueDate>Klar senast: {task.due_date}</DueDate>}
+            { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
+              och [0] tar första delen av arrayen som är datumet*/}
+
+            {task.due_date && <DueDate>Klar senast: {new Date(task.due_date).toISOString().split('T')[0]}</DueDate>}
             {task.description && <Description>{task.description}</Description>}
 
             {/* Visa familjemedlemmar kopplade till uppgiften */}

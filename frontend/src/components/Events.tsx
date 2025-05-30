@@ -13,6 +13,8 @@ type Event = {
   title: string;
   description?: string;
   event_date: string;
+  start_time: string;
+  end_time: string;
   family_member_ids: number[];
 };
 
@@ -26,9 +28,11 @@ function Events({ userId, token }: Props) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<number[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isAddingEvent, setIsAddingEvent] = useState(false);
+  const [isAddingEvent, setIsAddingEvent] = useState(false); // Lägg till event-form visas ej från början
   const [events, setEvents] = useState<Event[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +100,10 @@ function Events({ userId, token }: Props) {
       return;
     }
 
+    // Lägger till :00 innan det skickas till backend eftersom TIME i postgre vill ha sekunder
+    const startTimePlusZeros = startTime.length === 5 ? startTime + ':00' : startTime;
+    const endTimePlusZeros = endTime.length === 5 ? endTime + ':00' : endTime;
+
     try {
       const res = await fetch('/api/events', {
         method: 'POST',
@@ -107,6 +115,8 @@ function Events({ userId, token }: Props) {
           title,
           description,
           event_date: eventDate,
+          start_time: startTimePlusZeros,
+          end_time: endTimePlusZeros,
           user_id: userId,
           family_member_ids: selectedFamilyMembers,
         }),
@@ -118,12 +128,14 @@ function Events({ userId, token }: Props) {
         return;
       }
 
-      const newEvents = await res.json();
-      setEvents(newEvents); // Eftersom backend returnerar alla events efter POST
+      await fetchEvents();
+
+      // Töm formuläret
       setTitle('');
       setDescription('');
       setEventDate('');
       setSelectedFamilyMembers([]);
+      setIsAddingEvent(false); // Stänger formuläret för att skapa event
 
     } catch (error) {
       setErrorMessage('Fel vid skapande av event');
@@ -155,7 +167,7 @@ function Events({ userId, token }: Props) {
       <Title>Mina Events</Title>
       <FormContainer>
         {!isAddingEvent && (
-          <SubmitButton onClick={() => setIsAddingEvent(true)}>
+          <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingEvent(true)}>
             Lägg till nytt event
           </SubmitButton>
         )}
@@ -191,6 +203,27 @@ function Events({ userId, token }: Props) {
             </FormGroup>
 
             <FormGroup>
+              <label>Starttid:</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={event => setStartTime(event.target.value)}
+                required
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <label>Sluttid:</label>
+              <input
+                type="time"
+                value={endTime}
+                onChange={event => setEndTime(event.target.value)}
+                required
+              />
+            </FormGroup>
+
+
+            <FormGroup>
               <label>Familjemedlemmar (minst en):</label>
               {familyMembers.length === 0 && <NoFamilyMessage>Inga familjemedlemmar hittades.</NoFamilyMessage>}
               {familyMembers.map(fm => (
@@ -213,29 +246,37 @@ function Events({ userId, token }: Props) {
 
       </FormContainer>
 
+
       <Subtitle>Eventlista</Subtitle>
       {Array.isArray(events) && events.length > 0 ? (
         <EventList>
           {events.map(event => (
             <EventItem key={event.id}>
-              <strong>{event.title}</strong> – {event.event_date}
+              <strong>{event.title}</strong>
               <br />
-              {event.description && <em>{event.description}</em>}
+              { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
+              och [0] tar första delen av arrayen som är datumet*/
+                new Date(event.event_date).toISOString().split('T')[0]}
               <br />
-              {event.family_member_ids.length === 0
-                ? 'Ingen'
+              { // Visa start- och sluttid utan sekunder genom att ta bort 5 första tecknena
+                event.start_time.slice(0, 5)} - {event.end_time.slice(0, 5)}
+              <br />
+              {// Lägger till description om det finns
+                event.description && <em>{event.description}</em>}
+              <br />
+              {event.family_member_ids.length === 0 ? 'Ingen'
                 : event.family_member_ids
                   .map(id => familyMembers.find(fm => fm.id === id)?.name)
-                  .filter(Boolean)
-                  .join(', ')}
+                  .filter(Boolean) // Ta bort undefined om någon inte hittas
+                  .join(', ') //Gör en lista med kommatecken mellan
+              }
               <br />
               <DeleteButton onClick={() => handleDelete(event.id)}>Ta bort</DeleteButton>
             </EventItem>
           ))}
         </EventList>
-      ) : (
-        <p>Inga events skapade än.</p>
-      )}
+      ) : (<p>Inga events skapade än.</p>)
+      }
     </EventsFormContainer>
   );
 }

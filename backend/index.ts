@@ -620,31 +620,22 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
   try {
     const userId = (request as UserRequest).user?.id;
 
-    const now = new Date();
-    const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-
-    const mondayStr = monday.toISOString().slice(0, 10);
-    const sundayStr = sunday.toISOString().slice(0, 10);
-
-    // Hämta engångs-uppgifter för inloggad användare
-    const singleTasksResult = await client.query(
-      `SELECT * FROM tasks WHERE due_date BETWEEN $1 AND $2 AND user_id = $3 ORDER BY due_date`,
-      [mondayStr, sundayStr, userId]
-    );
-    const singleTasks = singleTasksResult.rows;
-
-    // Hämta återkommande uppgifter för inloggad användare
+    // Hämta återkommande uppgifter med veckodag som array
     const recurringTasksResult = await client.query(
-      `SELECT * FROM tasks WHERE recurring_weekday IS NOT NULL AND user_id = $1 ORDER BY recurring_weekday`,
+      `
+  SELECT t.*, COALESCE(array_agg(tw.weekday) FILTER (WHERE tw.weekday IS NOT NULL), '{}') AS recurring_weekdays
+  FROM tasks t
+  LEFT JOIN task_weekdays tw ON tw.task_id = t.id
+  WHERE t.user_id = $1
+  GROUP BY t.id
+  ORDER BY t.title
+  `,
       [userId]
     );
+
     const recurringTasks = recurringTasksResult.rows;
 
-    response.json({ singleTasks, recurringTasks });
+    response.json({ recurringTasks });
 
   } catch (error) {
     console.error(error);
@@ -655,12 +646,10 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
 
 //POST Veckoschema
 app.post('/api/week-tasks', authenticate, async (request, response) => {
+  console.log('Request body:', request.body);
   try {
-    const { title, description, recurring_weekday, family_member_ids, event_id } = request.body;
+    const { title, description, recurring_weekdays, family_member_ids } = request.body;
     const userId = (request as UserRequest).user?.id;
-
-    console.log('recurring_weekday:', recurring_weekday);
-    console.log('family_member_ids:', family_member_ids);
 
     // Kontrollera att family_member_ids tillhör användaren
     if (family_member_ids && family_member_ids.length > 0) {
@@ -676,8 +665,8 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
 
 
     const insertTaskResult = await client.query(
-      `INSERT INTO tasks (title, description, event_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [title, description, event_id || null, userId]
+      `INSERT INTO tasks (title, description, user_id) VALUES ($1, $2, $3) RETURNING *`,
+      [title, description, userId]
     );
 
     const newTask = insertTaskResult.rows[0];
@@ -693,8 +682,8 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
     }
 
     // Lägg till kopplingar i task_weekdays, ta bort nullvärden
-    if (Array.isArray(recurring_weekday) && recurring_weekday.length > 0) {
-      const filteredWeekdays = recurring_weekday.filter(day => day !== null && day !== undefined);
+    if (Array.isArray(recurring_weekdays) && recurring_weekdays.length > 0) {
+      const filteredWeekdays = recurring_weekdays.filter(day => day !== null && day !== undefined);
       for (const weekday of filteredWeekdays) {
         await client.query(
           `INSERT INTO task_weekdays (task_id, weekday) VALUES ($1, $2)`,
@@ -719,10 +708,15 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
     const completeTask = {
       ...newTask,
       family_member_ids: family_member_ids_from_db,
-      recurring_weekday: recurring_weekdays_from_db,
+      recurring_weekdays: recurring_weekdays_from_db,
     };
 
+    console.log('recurring_weekdays:', recurring_weekdays);
+    console.log('family_member_ids:', family_member_ids);
+    console.log('completeTask', completeTask);
+
     response.status(201).json(completeTask);
+
 
   } catch (error) {
     console.error('Fel vid skapande av veckouppgift:', error);
@@ -738,7 +732,7 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
   // Hämta inloggad användares id från request (från autentisering)
   const userId = (request as UserRequest).user?.id;
   // Hämta data som ska uppdateras från request body
-  const { title, description, due_date, completed, family_member_ids, event_id, recurring_weekday } = request.body;
+  const { title, description, completed, family_member_ids, recurring_weekdays } = request.body;
 
   try {
     // Kontrollera att uppgiften finns
@@ -756,21 +750,31 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
       `UPDATE tasks SET
         title = $1,
         description = $2,
-        due_date = $3,
-        completed = $4,
-        event_id = $5,
-        recurring_weekday = $6
-       WHERE id = $7`,
+        completed = $3
+      WHERE id = $4`,
       [
         title,
         description,
-        due_date || null,
         completed === undefined ? false : completed,
-        event_id || null,
-        recurring_weekday || null,
         taskId
       ]
     );
+
+    // Uppdatera kopplingar i task_weekdays
+    if (Array.isArray(recurring_weekdays)) {
+      // Ta bort gamla kopplingar
+      await client.query(
+        `DELETE FROM task_weekdays WHERE task_id = $1`,
+        [taskId]
+      );
+      // Lägg till nya veckodagar
+      for (const weekday of recurring_weekdays) {
+        await client.query(
+          `INSERT INTO task_weekdays (task_id, weekday) VALUES ($1, $2)`,
+          [taskId, weekday]
+        );
+      }
+    }
 
     // Uppdatera kopplingar i task_family_members
     if (Array.isArray(family_member_ids)) {
@@ -779,7 +783,6 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
         `DELETE FROM task_family_members WHERE task_id = $1`,
         [taskId]
       );
-
       // Lägg till nya kopplingar
       for (const familyMemberId of family_member_ids) {
         await client.query(
@@ -794,6 +797,36 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
   } catch (error) {
     console.error('Fel vid uppdatering av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte uppdatera uppgift' });
+  }
+});
+
+// DELETE week-task
+app.delete('/api/week-tasks/:id', authenticate, async (request, response) => {
+  try {
+    const taskId = request.params.id;
+    const userId = (request as UserRequest).user?.id;
+
+    // Kontrollera att uppgiften tillhör användaren
+    const checkTaskResult = await client.query(
+      `SELECT * FROM tasks WHERE id = $1 AND user_id = $2`,
+      [taskId, userId]
+    );
+
+    if (checkTaskResult.rows.length === 0) {
+      return response.status(404).json({ error: 'Uppgift hittades inte eller tillhör inte dig' });
+    }
+
+    // Ta bort uppgiften (kopplingstabeller rensas automatiskt via ON DELETE CASCADE)
+    await client.query(
+      `DELETE FROM tasks WHERE id = $1`,
+      [taskId]
+    );
+
+    response.json({ message: 'Uppgift raderad' });
+
+  } catch (error) {
+    console.error('Fel vid radering av uppgift:', error);
+    response.status(500).json({ error: 'Kunde inte radera uppgiften' });
   }
 });
 

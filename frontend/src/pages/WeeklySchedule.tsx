@@ -10,7 +10,7 @@ interface Task {
   event_id: number | null;
   family_member_ids: number[];
   recurring: boolean;
-  recurring_weekday?: number[];
+  recurring_weekdays?: number[];
 }
 
 interface FamilyMember {
@@ -82,30 +82,15 @@ function WeeklySchedule() {
       });
     }
 
-    function getFamilyMemberNames(ids: number[]): string {
-      const names = familyMembers
-        .filter(member => ids.includes(member.id))
-        .map(member => member.name);
-      return names.join(', ');
-    }
-
-    // Hämta events
-    function fetchEvents() {
-      return fetch('http://localhost:8080/api/events', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(response => {
-        console.log('fetchEvents status:', response.status);
-        if (!response.ok) {
-          throw new Error('Något gick fel vid hämtning av events');
-        }
-        return response.json();
-      });
-    }
-
     // Hämta allt parallellt
-    Promise.all([fetchTasks(), fetchFamilyMembers(), fetchEvents()])
-      .then(([tasksData, familyMembersData, eventsData]) => {
-        setTasks(tasksData);
+    Promise.all([fetchTasks(), fetchFamilyMembers()])
+      .then(([tasksData, familyMembersData]) => {
+        console.log('tasksData från backend:', tasksData);
+        if (Array.isArray(tasksData.recurringTasks)) {
+          setTasks(tasksData.recurringTasks);
+        } else {
+          console.warn('recurringTasks är inte en array:', tasksData.recurringTasks);
+        }
         setFamilyMembers(familyMembersData);
         setLoading(false);
       })
@@ -131,9 +116,6 @@ function WeeklySchedule() {
       return;
     }
 
-    // const recurringWeekdaysAsNumbers = newRecurringWeekday.map(day => weekdayMap[day]);
-
-
     // Skapa objekt för ny uppgift (POST)
     const newTaskToAdd = {
       title: newTitle,
@@ -141,11 +123,11 @@ function WeeklySchedule() {
       completed: false,
       family_member_ids: newSelectedFamilyMemberIds,
       recurring: true,
-      recurring_weekday: newRecurringWeekday,
+      recurring_weekdays: newRecurringWeekday,
     };
 
-    console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
-    console.log("Recurring weekdays to send:", newRecurringWeekday);
+    //console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
+    //console.log("Recurring weekdays to send:", newRecurringWeekday);
 
     fetch('http://localhost:8080/api/week-tasks', {
       method: 'POST',
@@ -163,10 +145,10 @@ function WeeklySchedule() {
       })
       .then(addedTask => {
         console.log('Ny uppgift från server:', addedTask);
-
-        setTasks(prev => {
-          // Om prev är en array, använd den, annars tom array
-          const safePrev = Array.isArray(prev) ? prev : [];
+        // Lägger till uppgiften i arrayen, previous hämtar föregående värde av Tasks state innan uppdatering
+        setTasks(previous => {
+          // Om previous är en array, använd den, annars tom array
+          const safePrev = Array.isArray(previous) ? previous : [];
           return [...safePrev, addedTask];
         });
 
@@ -185,47 +167,6 @@ function WeeklySchedule() {
   }
 
 
-  // PUT Funktion för att uppdatera en uppgift
-  function updateTask(updatedTask: Task) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('Du måste vara inloggad för att uppdatera uppgifter');
-      return;
-    }
-
-    fetch(`http://localhost:8080/api/week-tasks/${updatedTask.id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(updatedTask),
-    })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Misslyckades med att uppdatera uppgift');
-        }
-        // Uppdatera lokalt state med nya data
-        setTasks(prev =>
-          prev.map(task =>
-            task.id === updatedTask.id ? updatedTask : task
-          )
-        );
-      })
-      .catch(error => {
-        console.error(error);
-        alert('Något gick fel när uppgiften skulle uppdateras');
-      });
-  }
-
-  // Funktion för att bocka av/markera klar eller ej klar
-  function toggleTaskCompleted(taskId: number) {
-    const task = tasks.find(task => task.id === taskId);
-    if (!task) return;
-
-    const updatedTask = { ...task, completed: !task.completed };
-    updateTask(updatedTask);
-  }
 
   // DELETE Funktion för att radera uppgift
   function deleteTask(taskId: number) {
@@ -253,19 +194,72 @@ function WeeklySchedule() {
 
   // Filtrera tasks baserat på vald användare, kolla först om det är en array
   const safeTasks = Array.isArray(tasks) ? tasks : [];
-  let filteredTasks;
+  console.log('Original tasks:', safeTasks);
 
-  if (selectedFamilyMemberIdForFilter === 'all') {
-    filteredTasks = safeTasks.filter(task => task.recurring === true);
-  } else {
-    filteredTasks = safeTasks.filter(task =>
-      task.recurring === true && task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number)
-    );
-  }
+  const filteredTasks = safeTasks.filter(task => {
+    const isRecurring = Array.isArray(task.recurring_weekdays) && task.recurring_weekdays.length > 0;
+    if (selectedFamilyMemberIdForFilter === 'all') {
+      return isRecurring;
+    }
+    return isRecurring && task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number);
+  });
+
+  console.log('Filtered tasks:', filteredTasks);
 
 
   if (loading) return <p>Laddar uppgifter...</p>;
   if (error) return <p>{error}</p>;
+
+  function getFamilyMemberNames(ids: number[]): string {
+    const names = familyMembers
+      .filter(member => ids.includes(member.id))
+      .map(member => member.name);
+    // Slå ihop namnen till en sträng
+    return names.join(', ');
+  }
+
+  // PUT, uppdatera checkbox
+  function toggleTaskCompleted(task: Task) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Du måste vara inloggad');
+      return;
+    }
+
+    // Skapa ny version av task med togglad completed
+    const updatedTask = {
+      ...task,
+      completed: !task.completed,
+    };
+
+    fetch(`http://localhost:8080/api/week-tasks/${task.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(updatedTask),
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Kunde inte uppdatera uppgiften');
+        }
+        return response.json();
+      })
+      .then(() => {
+        // Uppdatera lokalt tillstånd
+        setTasks(previousTasks =>
+          previousTasks.map(t =>
+            t.id === task.id ? { ...t, completed: updatedTask.completed } : t
+          )
+        );
+      })
+      .catch(error => {
+        console.error('Fel vid PUT:', error);
+      });
+  }
+
+  const testFilteredTasks = filteredTasks;
 
   return (
     <Container>
@@ -369,10 +363,12 @@ function WeeklySchedule() {
       <WeeklyScheduleContainer>
         <WeekGrid>
           {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
-            const tasksForDay = filteredTasks.filter(task =>
-              Array.isArray(task.recurring_weekday) &&
-              task.recurring_weekday.includes(weekdayMap[day])
+            const tasksForDay = testFilteredTasks.filter(task =>
+              Array.isArray(task.recurring_weekdays) &&
+              task.recurring_weekdays.map(Number).includes(weekdayMap[day])
             );
+
+            console.log(`Tasks for ${day}:`, tasksForDay);
 
             return (
               <DayColumn key={day}>
@@ -381,26 +377,26 @@ function WeeklySchedule() {
                   <ul>
                     {tasksForDay.map(task => (
                       <RecurringTaskItem key={task.id} $completed={task.completed}>
+                        <input
+                          type="checkbox"
+                          checked={task.completed}
+                          onChange={() => toggleTaskCompleted(task)}
+                        />
                         <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
                         {task.description && <Description>{task.description}</Description>}
 
 
-                        {task.family_member_ids && (
-                          <FamilyMembers>
-                            {task.family_member_ids
-                              .map(id => {
-                                const member = familyMembers.find(m => m.id === id);
-                                return member ? member.name : 'Okänd';
-                              })
-                              .join(', ')}
-                          </FamilyMembers>
+                        {task.family_member_ids && task.family_member_ids.length > 0 && (
+                          <FamilyMembers>{getFamilyMemberNames(task.family_member_ids)}</FamilyMembers>
                         )}
+
+                        <DeleteButton onClick={() => deleteTask(task.id)}>x</DeleteButton>
 
                       </RecurringTaskItem>
                     ))}
                   </ul>
                 ) : (
-                  <p>Inga uppgifter</p>
+                  <p></p>
                 )}
               </DayColumn>
             );
@@ -409,7 +405,7 @@ function WeeklySchedule() {
       </WeeklyScheduleContainer>
 
       {!isAddingTask && (
-        <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingTask(true)}>
+        <SubmitButton onClick={() => setIsAddingTask(true)}>
           Lägg till ny uppgift
         </SubmitButton>
       )}
@@ -499,7 +495,8 @@ const DayColumn = styled.div`
   background-color: #f4f4f4;
   border-radius: 10px;
   padding: 0rem;
-  min-height: 150px;
+  min-width: 90px;
+  min-height: 300px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 `;
 
@@ -560,7 +557,6 @@ cursor: pointer;
 padding: 0.15rem .5rem;
 border: 1px;
 border-radius: 8px;
-transition: background - color 0.3s;
 
   &:hover {
   background: rgb(189, 11, 11);
@@ -578,8 +574,7 @@ const SubmitButton = styled.button`
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
-
+  
   &:hover {
     background-color:rgb(115, 221, 120);
   }

@@ -371,44 +371,6 @@ function Tasks() {
         )}
       </FormContainer>
 
-      <Title>Veckoschema</Title>
-      <WeeklySchedule>
-        <WeekGrid>
-          {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
-            const tasksForDay = tasks.filter(task =>
-              Array.isArray(task.recurring_weekday) && task.recurring_weekday.includes(day)
-            );
-
-            return (
-              <DayColumn key={day}>
-                <DayTitle>{day.charAt(0).toUpperCase() + day.slice(1)}</DayTitle>
-                {tasksForDay.length > 0 ? (
-                  <ul>
-                    {tasksForDay.map(task => (
-                      <RecurringTaskItem key={task.id} $completed={task.completed}>
-                        <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
-                        {task.description && <Description>{task.description}</Description>}
-                        {task.family_member_ids && (
-                          <FamilyMembers>{task.family_member_ids.join(', ')}</FamilyMembers>
-                        )}
-                      </RecurringTaskItem>
-                    ))}
-                  </ul>
-                ) : (
-                  <p>Inga uppgifter</p>
-                )}
-              </DayColumn>
-            );
-          })}
-        </WeekGrid>
-      </WeeklySchedule>
-
-      {!isAddingTask && (
-        <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingTask(true)}>
-          Lägg till ny uppgift
-        </SubmitButton>
-      )}
-
       <Filter>
         <Title>Uppgifter</Title>
         <div>
@@ -523,50 +485,6 @@ const Title = styled.h3`
   margin-top: 1rem;
 `;
 
-const WeeklySchedule = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 0.4rem;
-  padding: 0 0.5rem;
-`;
-
-const WeekGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(7, 1fr); 
-  gap: 0.2rem;
-  margin-top: 2rem;
-`;
-
-const DayColumn = styled.div`
-  background-color: #f4f4f4;
-  border-radius: 10px;
-  padding: 0rem;
-  min-height: 150px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-`;
-
-const DayTitle = styled.h4`
-  background-color: rgb(117, 119, 212);
-  color: white;
-  border-radius: 3px;
-  padding: 2px;
-  text-align: center;
-  margin-bottom: 0.5rem;
-`;
-
-const RecurringTaskItem = styled.li<{ $completed: boolean }>`
-  border: 1px solid #ccc;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  border-radius: 8px;
-  background-color: ${props => (props.$completed ? '#ddd' : '#fff')};
-  color: ${props => (props.$completed ? '#666' : '#000')};
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  list-style: none;
-  font-size: 0.9rem;
-  position: relative;
-`;
-
 const TaskList = styled.ul`
   margin: 0 auto;
   max-width: 300px;
@@ -630,7 +548,6 @@ cursor: pointer;
 padding: 0.15rem .5rem;
 border: 1px;
 border-radius: 8px;
-transition: background - color 0.3s;
 
   &:hover {
   background: rgb(189, 11, 11);
@@ -648,8 +565,7 @@ const SubmitButton = styled.button`
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
-
+  
   &:hover {
     background-color:rgb(115, 221, 120);
   }

@@ -9,6 +9,8 @@ interface Task {
   completed: boolean;
   event_id: number | null;
   family_member_ids: number[];
+  recurring: boolean;
+  recurring_weekdays?: string[];
 }
 
 interface FamilyMember {
@@ -38,11 +40,15 @@ function Tasks() {
   const [error, setError] = useState<string | null>(null);
 
   // State för nya uppgifter (inputfält)
+  const [isAddingTask, setIsAddingTask] = useState(false); // Lägg till så att lägga-till-formuläret visas ej från början
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
   const [newSelectedFamilyMemberIds, setNewSelectedFamilyMemberIds] = useState<number[]>([]);
   const [newSelectedEventId, setNewSelectedEventId] = useState<number | null>(null);
+  const [newRecurring, setNewRecurring] = useState(false);
+  const [newRecurringWeekday, setNewRecurringWeekday] = useState<string[]>([]);
+
 
   // Hämta data när komponenten laddas
   useEffect(() => {
@@ -126,11 +132,15 @@ function Tasks() {
     const newTaskToAdd = {
       title: newTitle,
       description: newDescription,
-      due_date: newDueDate,
+      due_date: newRecurring ? '' : newDueDate, // om återkommande, sätt tomt datum
       completed: false,
       family_member_ids: newSelectedFamilyMemberIds,
       event_id: newSelectedEventId,
+      recurring: newRecurring,
+      recurring_weekdays: newRecurring ? newRecurringWeekday : []
     };
+
+
 
     console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
 
@@ -159,6 +169,7 @@ function Tasks() {
         setNewDueDate('');
         setNewSelectedFamilyMemberIds([]);
         setNewSelectedEventId(null);
+        setIsAddingTask(false); // Stänger formuläret för att skapa uppgift
       })
       .catch(error => {
         console.error(error);
@@ -233,17 +244,6 @@ function Tasks() {
       });
   }
 
-  /*
-    // Checkbox-hantering familjemedlemmar
-    function handleUserCheckboxChange(userId: number, isChecked: boolean) {
-      if (isChecked) {
-        setNewSelectedFamilyMemberIds(prev => [...prev, userId]);
-      } else {
-        setNewSelectedFamilyMemberIds(prev => prev.filter(id => id !== userId));
-      }
-    } */
-
-
   // Events ändringar
   function handleEventChange(eventId: number) {
     setNewSelectedEventId(eventId);
@@ -254,104 +254,202 @@ function Tasks() {
     ? tasks
     : tasks.filter(data => data.family_member_ids.includes(selectedFamilyMemberIdForFilter as number));
 
+  // Veckodags tasks
+  const recurringTasks = filteredTasks.filter(task => task.recurring);
+
+  // Vanliga tasks
+  const normalTasks = filteredTasks.filter(task => !task.recurring);
+
+  // Veckoschema
+  const weekdaysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const weekdayNames: Record<string, string> = {
+    monday: 'Måndag',
+    tuesday: 'Tisdag',
+    wednesday: 'Onsdag',
+    thursday: 'Torsdag',
+    friday: 'Fredag',
+    saturday: 'Lördag',
+    sunday: 'Söndag',
+  };
 
   if (loading) return <p>Laddar uppgifter...</p>;
   if (error) return <p>{error}</p>;
 
-
   return (
     <Container>
-      <h2>Uppgifter</h2>
-      <div>
-        <label>Filtrera på familjemedlem: </label>
-        <select
-          value={selectedFamilyMemberIdForFilter}
-          onChange={event => {
-            const value = event.target.value;
-            if (value === 'all') {
-              setSelectedFamilyMemberIdForFilter('all');
-            } else {
-              setSelectedFamilyMemberIdForFilter(Number(value));
-            }
-          }}
-        >
-          <option value="all">Alla familjemedlemmar</option>
-          {familyMembers.map(member => (
-            <option key={member.id} value={member.id}>{member.name}</option>
-          ))}
-        </select>
-      </div>
+      {loading && <p>Laddar...</p>}
+      {error && <p >{error}</p>}
 
-      <Form>
-        <h3>Lägg till ny uppgift</h3>
-        <label>
-          Titel: <br />
-          <input
-            type="text"
-            value={newTitle}
-            onChange={event => setNewTitle(event.target.value)}
-          />
-        </label>
-        <br />
-        <label>
-          Beskrivning: <br />
-          <textarea
-            value={newDescription}
-            onChange={event => setNewDescription(event.target.value)}
-          />
-        </label>
-        <br />
-        <label>
-          Klar senast: <br />
-          <input
-            type="date"
-            value={newDueDate}
-            onChange={event => setNewDueDate(event.target.value)}
-          />
-        </label>
-        <br />
+      <FormContainer>
+        {!loading && !error && (
+          <>
+            {!isAddingTask && (
+              <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingTask(true)}>
+                Lägg till nytt event
+              </SubmitButton>
+            )}
 
-        <fieldset>
-          <legend>Koppla till familjemedlem (valfritt):</legend>
-          {familyMembers.map(member => (
-            <label key={member.id} style={{ marginRight: '10px' }}>
-              <input
-                type="checkbox"
-                checked={newSelectedFamilyMemberIds.includes(member.id)}
-                onChange={event => {
-                  const isChecked = event.target.checked;
-                  if (isChecked) {
-                    setNewSelectedFamilyMemberIds(prev => [...prev, member.id]);
-                  } else {
-                    setNewSelectedFamilyMemberIds(prev => prev.filter(id => id !== member.id));
-                  }
-                }}
-              />
-              {member.name}
-            </label>
-          ))}
-        </fieldset>
+            {isAddingTask && (
+              <Form>
+                <h3>Lägg till ny uppgift</h3>
 
-        <fieldset>
-          <legend>Koppla till event (valfritt):</legend>
+                <label>
+                  Titel: <br />
+                  <input
+                    type="text"
+                    value={newTitle}
+                    onChange={event => setNewTitle(event.target.value)}
+                  />
+                </label>
+                <br />
+
+                <label>
+                  Beskrivning: <br />
+                  <textarea
+                    value={newDescription}
+                    onChange={event => setNewDescription(event.target.value)}
+                  />
+                </label>
+                <br />
+
+                { /* <label>
+                Klar senast: <br />
+                <input
+                  type="date"
+                  value={newDueDate}
+                  onChange={event => setNewDueDate(event.target.value)}
+                />
+              </label> */}
+                <br />
+
+                <fieldset>
+                  <legend>Lägg till i veckoschema:</legend>
+                  {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => (
+                    <label key={day} style={{ marginRight: '10px' }}>
+                      <input
+                        type="checkbox"
+                        value={day}
+                        checked={newRecurringWeekday.includes(day)}
+                        onChange={event => {
+                          const checked = event.target.checked;
+                          const value = event.target.value;
+
+                          if (checked) {
+                            setNewRecurringWeekday(prev => [...prev, value]);
+                          } else {
+                            setNewRecurringWeekday(prev => prev.filter(d => d !== value));
+                          }
+                        }}
+                      />
+                      {day.charAt(0).toUpperCase() + day.slice(1)}
+                    </label>
+                  ))}
+                </fieldset>
+
+                {!newRecurring && (
+                  <label>
+                    Klar senast: <br />
+                    <input
+                      type="date"
+                      value={newDueDate}
+                      onChange={event => setNewDueDate(event.target.value)}
+                    />
+                  </label>
+                )}
+
+                <fieldset>
+                  <legend>Koppla till familjemedlem (valfritt):</legend>
+                  {familyMembers.map(member => (
+                    <label key={member.id} style={{ marginRight: '10px' }}>
+                      <input
+                        type="checkbox"
+                        checked={newSelectedFamilyMemberIds.includes(member.id)}
+                        onChange={event => {
+                          const isChecked = event.target.checked;
+                          if (isChecked) {
+                            setNewSelectedFamilyMemberIds(prev => [...prev, member.id]);
+                          } else {
+                            setNewSelectedFamilyMemberIds(prev => prev.filter(id => id !== member.id));
+                          }
+                        }}
+                      />
+                      {member.name}
+                    </label>
+                  ))}
+                </fieldset>
+
+                <fieldset>
+                  <legend>Koppla till event (valfritt):</legend>
+                  <select
+                    value={newSelectedEventId ?? ''}
+                    onChange={event => setNewSelectedEventId(Number(event.target.value))}
+                  >
+                    <option value="">Ingen</option>
+                    {events.map(e => (
+                      <option key={e.id} value={e.id}>{e.title}</option>
+                    ))}
+                  </select>
+                </fieldset>
+
+                <button type="button" onClick={addTask}>Lägg till uppgift</button>
+              </Form>
+            )}
+          </>
+        )}
+      </FormContainer>
+
+
+      <WeeklySchedule>
+        <h3>Veckoschema</h3>
+        {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
+          const tasksForDay = tasks.filter(task =>
+            Array.isArray(task.recurring_weekdays) && task.recurring_weekdays.includes(day)
+          );
+
+          return (
+            <div key={day}>
+              <h4>{day.charAt(0).toUpperCase() + day.slice(1)}</h4>
+              {tasksForDay.length > 0 ? (
+                <ul>
+                  {tasksForDay.map(task => (
+                    <li key={task.id}>{task.title}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p>Inga uppgifter</p>
+              )}
+            </div>
+          );
+        })}
+      </WeeklySchedule>
+
+      <Filter>
+        <h2>Uppgifter</h2>
+        <div>
+          <label>Filtrera på familjemedlem: </label>
           <select
-            value={newSelectedEventId ?? ''}
-            onChange={event => setNewSelectedEventId(Number(event.target.value))}
+            value={selectedFamilyMemberIdForFilter}
+            onChange={event => {
+              const value = event.target.value;
+              if (value === 'all') {
+                setSelectedFamilyMemberIdForFilter('all');
+              } else {
+                setSelectedFamilyMemberIdForFilter(Number(value));
+              }
+            }}
           >
-            <option value="">Ingen</option>
-            {events.map(e => (
-              <option key={e.id} value={e.id}>{e.title}</option>
+            <option value="all">Alla familjemedlemmar</option>
+            {familyMembers.map(member => (
+              <option key={member.id} value={member.id}>{member.name}</option>
             ))}
           </select>
-        </fieldset>
-
-        <button type="button" onClick={addTask}>Lägg till uppgift</button>
-      </Form>
+        </div>
+      </Filter>
 
       { /* Visnings-lista av uppgifter/ tasks */}
       <TaskList>
         {filteredTasks.map(task => (
-          <TaskItem key={task.id}>
+          <TaskItem key={task.id} $completed={task.completed}>
             <input
               type="checkbox"
               checked={task.completed}
@@ -365,18 +463,20 @@ function Tasks() {
             {task.description && <Description>{task.description}</Description>}
 
             {/* Visa familjemedlemmar kopplade till uppgiften */}
-            {Array.isArray(task.family_member_ids) && task.family_member_ids.length > 0 ? (
-              (() => {
-                const assignedNames = task.family_member_ids.map(id => {
-                  const member = familyMembers.find(m => m.id === id);
-                  return member ? member.name : "Okänd medlem";
-                }).join(", ");
+            <FamilyMembers>
+              {Array.isArray(task.family_member_ids) && task.family_member_ids.length > 0 ? (
+                (() => {
+                  const assignedNames = task.family_member_ids.map(id => {
+                    const member = familyMembers.find(m => m.id === id);
+                    return member ? member.name : "Okänd medlem";
+                  }).join(", ");
 
-                return <p> {assignedNames}</p>;
-              })()
-            ) : (
-              <p>Ofördelad uppgift</p>
-            )}
+                  return <p> {assignedNames}</p>;
+                })()
+              ) : (
+                <p>Ofördelad uppgift</p>
+              )}
+            </FamilyMembers>
 
             {/* Visa kopplade events */}
             {task.event_id && (
@@ -389,15 +489,28 @@ function Tasks() {
             <DeleteButton onClick={() => deleteTask(task.id)}>Radera</DeleteButton>
           </TaskItem>
         ))}
-
         {filteredTasks.length === 0 && <p>Inga uppgifter att visa.</p>}
       </TaskList>
     </Container >
   );
 }
 
+export default Tasks;
+
 // Styled Components för enkel styling
 const Container = styled.div`
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 1rem;
+`;
+
+const Filter = styled.div`
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 0px;
+  `;
+
+const FormContainer = styled.div`
   max-width: 700px;
   margin: 0 auto;
   padding: 1rem;
@@ -410,14 +523,25 @@ const Form = styled.div`
   border: 1px solid #ccc;
 `;
 
+const WeeklySchedule = styled.div`
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 1rem;
+`;
+
 const TaskList = styled.ul`
   list-style-type: none;
   padding: 0;
 `;
 
-const TaskItem = styled.li`
-  border-bottom: 1px solid #ccc;
-  padding: 0.5rem 0;
+const TaskItem = styled.li<{ $completed: boolean }>`
+  border: 1px solid #ccc;
+  margin: 1em 0;
+  padding: 1em;
+  color:  ${props => (props.$completed ? 'rgb(134, 134, 134)' : 'rgb(0, 0, 0)')};
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
+  background-color: ${props => (props.$completed ? 'rgb(209, 209, 209)' : ' #f9f9f9')};
 `;
 
 const TaskTitle = styled.span<{ $completed: boolean }>`
@@ -436,14 +560,16 @@ const Description = styled.div`
   font-style: italic;
 `;
 
-const UserList = styled.div`
+const EventList = styled.div`
   font-size: 0.85rem;
   margin-top: 0.25rem;
 `;
 
-const EventList = styled.div`
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
+const FamilyMembers = styled.div`
+  text-align: right;
+  margin-top: 0.5rem;
+  margin-left: 10rem;
+  color: #333;
 `;
 
 const DeleteButton = styled.button`
@@ -456,4 +582,17 @@ const DeleteButton = styled.button`
   border-radius: 4px;
 `;
 
-export default Tasks;
+const SubmitButton = styled.button`
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #43a047;
+  }
+`;

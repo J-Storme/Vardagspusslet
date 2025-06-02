@@ -57,9 +57,18 @@ title TEXT NOT NULL,
 description TEXT,
 due_date DATE, 
 completed BOOLEAN DEFAULT FALSE, 
-event_id INTEGER REFERENCES events(id) 
+event_id INTEGER REFERENCES events(id), 
 recurring_weekday INTEGER
 );
+
+-- kopllingstabell för att kunna koppla flera veckodagar till uppgift
+DROP TABLE IF EXISTS task_weekdays;
+CREATE TABLE task_weekdays (
+  task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
+  weekday INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7),
+  PRIMARY KEY (task_id, weekday)
+);
+
 
 -- kopplingstabell tasks_family_members (flera familjemedlemmar kan kopplas till en uppgift)
 DROP TABLE IF EXISTS task_family_members;

@@ -1,24 +1,20 @@
-export interface FamilyMember {
-  id: number;
-  name: string;
-  role: string;
-  profile_image: string;
-}
-
-export interface Event {
+export type Task = {
   id: number;
   title: string;
   description?: string;
-  event_date: string;
+  due_date?: string;
+  completed: boolean;
+  recurring_weekdays?: string[];
   family_member_ids: number[];
-}
+  event_id?: number;
+};
 
-export interface Task {
+export type Event = {
   id: number;
   title: string;
-  description: string;
-  due_date: string;
-  completed: boolean;
-  event_id: number | null;
-  family_member_ids: number[];
-}
+};
+
+export type FamilyMember = {
+  id: number;
+  name: string;
+};

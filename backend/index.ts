@@ -441,11 +441,8 @@ app.put('/api/tasks/:id', authenticate, async (request, response) => {
 
   try {
     const checkResult = await client.query(
-      `SELECT tasks.*
-       FROM tasks
-       JOIN family_members ON tasks.family_member_id = family_members.id
-       WHERE tasks.id = $1 AND family_members.user_id = $2`,
-      [taskId, userId]
+      `SELECT * FROM tasks WHERE id = $1`,
+      [taskId]
     );
 
     if (checkResult.rows.length === 0) {
@@ -471,37 +468,6 @@ app.put('/api/tasks/:id', authenticate, async (request, response) => {
       ]
     );
 
-    // Om family_member_ids finns i request body, uppdatera kopplingarna
-    if (Array.isArray(family_member_ids)) {
-      // 1. Ta bort gamla kopplingar för tasken
-      await client.query(
-        `DELETE FROM task_family_members WHERE task_id = $1`,
-        [taskId]
-      );
-
-      // 2. Lägg till nya kopplingar (om det finns några)
-      if (family_member_ids.length > 0) {
-        // Kontrollera att alla familjemedlemmar tillhör användaren
-        const checkFamilyMembers = await client.query(
-          `SELECT id FROM family_members WHERE id = ANY($1) AND user_id = $2`,
-          [family_member_ids, userId]
-        );
-
-        if (checkFamilyMembers.rows.length !== family_member_ids.length) {
-          return response.status(403).json({ error: 'En eller flera familjemedlemmar tillhör inte dig' });
-        }
-
-        // Bygg en insert-sträng för kopplingarna
-        const insertValues = family_member_ids
-          .map((id: number, index: number) => `($1, $${index + 2})`)
-          .join(',');
-
-        await client.query(
-          `INSERT INTO task_family_members (task_id, family_member_id) VALUES ${insertValues}`,
-          [taskId, ...family_member_ids]
-        );
-      }
-    }
     response.status(200).json({ message: 'Uppgift uppdaterad' });
 
   } catch (error) {

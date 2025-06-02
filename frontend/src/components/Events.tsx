@@ -45,7 +45,7 @@ function Events({ userId, token }: Props) {
 
   async function fetchFamilyMembers() {
     try {
-      const token = localStorage.getItem('token');
+      //const token = localStorage.getItem('token');
       const res = await fetch('/api/family-members', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -252,6 +252,7 @@ function Events({ userId, token }: Props) {
         <EventList>
           {events.map(event => (
             <EventItem key={event.id}>
+              <DeleteButton onClick={() => handleDelete(event.id)}>×</DeleteButton>
               <strong>{event.title}</strong>
               <br />
               { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
@@ -271,7 +272,6 @@ function Events({ userId, token }: Props) {
                   .join(', ') //Gör en lista med kommatecken mellan
               }
               <br />
-              <DeleteButton onClick={() => handleDelete(event.id)}>Ta bort</DeleteButton>
             </EventItem>
           ))}
         </EventList>
@@ -373,27 +373,36 @@ const NoFamilyMessage = styled.p`
 const EventList = styled.ul`
   list-style-type: none;
   padding-left: 0;
+  max-width: 700px;
+  margin: 0 auto;
+  
 `;
 
+
 const EventItem = styled.li`
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background-color: #e3f2fd;
-  border-left: 4px solid #2196f3;
-  border-radius: 8px;
+position: relative;
+border: 1px solid #ccc;
+margin: 1em 0;
+padding: 1em;
+border - radius: 8px;
+background - color: rgb(232, 232, 235);
 `;
 
 const DeleteButton = styled.button`
-  margin-top: 0.5rem;
-  background-color: #f44336;
-  color: white;
-  font-weight: bold;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+position: absolute;
+top: 1px;
+right: 0px;
+background: transparent;
+color: rgb(14, 13, 13);
+font - size: 20px;
+cursor: pointer;
+margin - left: 10px;
+padding: 0.75rem 1.25rem;
+border: 1px;
+border - radius: 8px;
+transition: background - color 0.3s;
 
   &:hover {
-    background-color: #d32f2f;
-  }
+  color: rgb(173, 3, 3);
+}
 `;

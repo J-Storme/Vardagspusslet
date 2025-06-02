@@ -10,7 +10,7 @@ interface Task {
   event_id: number | null;
   family_member_ids: number[];
   recurring: boolean;
-  recurring_weekday?: string[];
+  recurring_weekday?: number[];
 }
 
 interface FamilyMember {
@@ -20,21 +20,10 @@ interface FamilyMember {
   profile_image: string;
 }
 
-interface Event {
-  id: number;
-  title: string;
-  description: string;
-  event_date: string;
-  user_id: number;
-  family_member_id: number;
-  category_id: number;
-}
-
-function Tasks() {
+function WeeklySchedule() {
   // states
   const [tasks, setTasks] = useState<Task[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [events, setEvents] = useState<Event[]>([]);
   const [selectedFamilyMemberIdForFilter, setSelectedFamilyMemberIdForFilter] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,12 +32,18 @@ function Tasks() {
   const [isAddingTask, setIsAddingTask] = useState(false); // Lägg till så att lägga-till-formuläret visas ej från början
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newDueDate, setNewDueDate] = useState('');
   const [newSelectedFamilyMemberIds, setNewSelectedFamilyMemberIds] = useState<number[]>([]);
-  const [newSelectedEventId, setNewSelectedEventId] = useState<number | null>(null);
-  const [newRecurring, setNewRecurring] = useState(false);
-  const [newRecurringWeekday, setNewRecurringWeekday] = useState<string[]>([]);
+  const [newRecurringWeekday, setNewRecurringWeekday] = useState<number[]>([]);
 
+  const weekdayMap: { [key: string]: number } = {
+    måndag: 1,
+    tisdag: 2,
+    onsdag: 3,
+    torsdag: 4,
+    fredag: 5,
+    lördag: 6,
+    söndag: 7,
+  };
 
   // Hämta data när komponenten laddas
   useEffect(() => {
@@ -63,7 +58,7 @@ function Tasks() {
 
     // Hämta tasks
     function fetchTasks() {
-      return fetch('http://localhost:8080/api/tasks', {
+      return fetch('http://localhost:8080/api/week-tasks', {
         headers: { Authorization: `Bearer ${token}` },
       }).then(response => {
         console.log('fetchTasks status:', response.status);
@@ -87,6 +82,13 @@ function Tasks() {
       });
     }
 
+    function getFamilyMemberNames(ids: number[]): string {
+      const names = familyMembers
+        .filter(member => ids.includes(member.id))
+        .map(member => member.name);
+      return names.join(', ');
+    }
+
     // Hämta events
     function fetchEvents() {
       return fetch('http://localhost:8080/api/events', {
@@ -105,7 +107,6 @@ function Tasks() {
       .then(([tasksData, familyMembersData, eventsData]) => {
         setTasks(tasksData);
         setFamilyMembers(familyMembersData);
-        setEvents(eventsData);
         setLoading(false);
       })
       .catch(error => {
@@ -118,6 +119,7 @@ function Tasks() {
   // POST Lägg till ny uppgift
   function addTask() {
     const token = localStorage.getItem('token');
+
     if (!token) {
       alert('Du måste vara inloggad för att lägga till uppgifter');
       return;
@@ -129,21 +131,23 @@ function Tasks() {
       return;
     }
 
+    // const recurringWeekdaysAsNumbers = newRecurringWeekday.map(day => weekdayMap[day]);
+
+
     // Skapa objekt för ny uppgift (POST)
     const newTaskToAdd = {
       title: newTitle,
       description: newDescription,
-      due_date: newRecurring ? '' : newDueDate, // om återkommande, sätt tomt datum
       completed: false,
       family_member_ids: newSelectedFamilyMemberIds,
-      event_id: newSelectedEventId,
-      recurring: newRecurring,
-      recurring_weekdays: newRecurring ? newRecurringWeekday : []
+      recurring: true,
+      recurring_weekday: newRecurringWeekday,
     };
 
     console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
+    console.log("Recurring weekdays to send:", newRecurringWeekday);
 
-    fetch('http://localhost:8080/api/tasks', {
+    fetch('http://localhost:8080/api/week-tasks', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -160,14 +164,18 @@ function Tasks() {
       .then(addedTask => {
         console.log('Ny uppgift från server:', addedTask);
 
-        setTasks(prev => [...prev, addedTask]);
+        setTasks(prev => {
+          // Om prev är en array, använd den, annars tom array
+          const safePrev = Array.isArray(prev) ? prev : [];
+          return [...safePrev, addedTask];
+        });
+
+        console.log("Data som skickas till backend:", newTaskToAdd);
 
         // Nollställ formulärfält
         setNewTitle('');
         setNewDescription('');
-        setNewDueDate('');
         setNewSelectedFamilyMemberIds([]);
-        setNewSelectedEventId(null);
         setIsAddingTask(false); // Stänger formuläret för att skapa uppgift
       })
       .catch(error => {
@@ -185,7 +193,7 @@ function Tasks() {
       return;
     }
 
-    fetch(`http://localhost:8080/api/tasks/${updatedTask.id}`, {
+    fetch(`http://localhost:8080/api/week-tasks/${updatedTask.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -227,7 +235,7 @@ function Tasks() {
       return;
     }
 
-    fetch(`http://localhost:8080/api/tasks/${taskId}`, {
+    fetch(`http://localhost:8080/api/week-tasks/${taskId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -243,20 +251,17 @@ function Tasks() {
       });
   }
 
-
-
-
-  // Filtrera tasks baserat på vald användare
+  // Filtrera tasks baserat på vald användare, kolla först om det är en array
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
   let filteredTasks;
 
   if (selectedFamilyMemberIdForFilter === 'all') {
-    filteredTasks = tasks;
+    filteredTasks = safeTasks.filter(task => task.recurring === true);
   } else {
-    filteredTasks = tasks.filter(function (task) {
-      return task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number);
-    });
+    filteredTasks = safeTasks.filter(task =>
+      task.recurring === true && task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number)
+    );
   }
-
 
 
   if (loading) return <p>Laddar uppgifter...</p>;
@@ -296,39 +301,41 @@ function Tasks() {
 
                 <StyledFieldset>
                   <legend>Lägg till i veckoschema:</legend>
-                  {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => (
-                    <label key={day} style={{ marginRight: '10px' }}>
-                      <input
-                        type="checkbox"
-                        value={day}
-                        checked={newRecurringWeekday.includes(day)}
-                        onChange={event => {
-                          const checked = event.target.checked;
-                          const value = event.target.value;
+                  {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
+                    const dayNumber = weekdayMap[day];
 
-                          // Om en veckodag är kryssad
-                          if (checked) {
-                            setNewRecurringWeekday(prev => [...prev, value]);
-                          } else {
-                            setNewRecurringWeekday(prev => prev.filter(d => d !== value));
-                          }
-                        }}
-                      />
-                      {day.charAt(0).toUpperCase() + day.slice(1)}
-                    </label>
-                  ))}
+                    return (
+                      <label key={day} style={{ marginRight: '10px' }}>
+                        <input
+                          type="checkbox"
+                          value={dayNumber.toString()}
+                          checked={newRecurringWeekday.includes(dayNumber)}
+                          onChange={event => {
+                            const checked = event.target.checked;
+                            const value = Number(event.target.value);
+
+                            if (isNaN(value)) {
+                              return;
+                            }
+
+                            if (checked) {
+                              setNewRecurringWeekday(prev => {
+                                // Undvik duplicering
+                                if (!prev.includes(value)) {
+                                  return [...prev, value];
+                                }
+                                return prev;
+                              });
+                            } else {
+                              setNewRecurringWeekday(prev => prev.filter(d => d !== value));
+                            }
+                          }}
+                        />
+                        {day.charAt(0).toUpperCase() + day.slice(1)}
+                      </label>
+                    );
+                  })}
                 </StyledFieldset>
-
-                {!newRecurring && (
-                  <label>
-                    Klar senast: <br />
-                    <input
-                      type="date"
-                      value={newDueDate}
-                      onChange={event => setNewDueDate(event.target.value)}
-                    />
-                  </label>
-                )}
 
                 <StyledFieldset>
                   <legend>Koppla till familjemedlem (valfritt):</legend>
@@ -351,19 +358,6 @@ function Tasks() {
                   ))}
                 </StyledFieldset>
 
-                <StyledFieldset>
-                  <legend>Koppla till event (valfritt):</legend>
-                  <select
-                    value={newSelectedEventId ?? ''}
-                    onChange={event => setNewSelectedEventId(Number(event.target.value))}
-                  >
-                    <option value="">Ingen</option>
-                    {events.map(e => (
-                      <option key={e.id} value={e.id}>{e.title}</option>
-                    ))}
-                  </select>
-                </StyledFieldset>
-
                 <SubmitButton type="button" onClick={addTask}>Lägg till uppgift</SubmitButton>
               </Form>
             )}
@@ -372,11 +366,12 @@ function Tasks() {
       </FormContainer>
 
       <Title>Veckoschema</Title>
-      <WeeklySchedule>
+      <WeeklyScheduleContainer>
         <WeekGrid>
           {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
-            const tasksForDay = tasks.filter(task =>
-              Array.isArray(task.recurring_weekday) && task.recurring_weekday.includes(day)
+            const tasksForDay = filteredTasks.filter(task =>
+              Array.isArray(task.recurring_weekday) &&
+              task.recurring_weekday.includes(weekdayMap[day])
             );
 
             return (
@@ -388,9 +383,19 @@ function Tasks() {
                       <RecurringTaskItem key={task.id} $completed={task.completed}>
                         <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
                         {task.description && <Description>{task.description}</Description>}
+
+
                         {task.family_member_ids && (
-                          <FamilyMembers>{task.family_member_ids.join(', ')}</FamilyMembers>
+                          <FamilyMembers>
+                            {task.family_member_ids
+                              .map(id => {
+                                const member = familyMembers.find(m => m.id === id);
+                                return member ? member.name : 'Okänd';
+                              })
+                              .join(', ')}
+                          </FamilyMembers>
                         )}
+
                       </RecurringTaskItem>
                     ))}
                   </ul>
@@ -401,7 +406,7 @@ function Tasks() {
             );
           })}
         </WeekGrid>
-      </WeeklySchedule>
+      </WeeklyScheduleContainer>
 
       {!isAddingTask && (
         <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingTask(true)}>
@@ -432,58 +437,11 @@ function Tasks() {
         </div>
       </Filter>
 
-      { /* Visnings-lista av uppgifter/ tasks */}
-      <TaskList>
-        {filteredTasks
-          .filter(task => !Array.isArray(task.recurring_weekday) || task.recurring_weekday.length === 0)
-          .map(task => (
-            <TaskItem key={task.id} $completed={task.completed}>
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleTaskCompleted(task.id)}
-              />
-              <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
-              { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
-              och [0] tar första delen av arrayen som är datumet*/}
-
-              {task.due_date && <DueDate>Klar senast: {new Date(task.due_date).toISOString().split('T')[0]}</DueDate>}
-              {task.description && <Description>{task.description}</Description>}
-
-              {/* Visa familjemedlemmar kopplade till uppgiften */}
-              <FamilyMembers>
-                {Array.isArray(task.family_member_ids) && task.family_member_ids.length > 0 ? (
-                  (() => {
-                    const assignedNames = task.family_member_ids.map(id => {
-                      const member = familyMembers.find(m => m.id === id);
-                      return member ? member.name : "Okänd medlem";
-                    }).join(", ");
-
-                    return <p> {assignedNames}</p>;
-                  })()
-                ) : (
-                  <p>Ofördelad uppgift</p>
-                )}
-              </FamilyMembers>
-
-              {/* Visa kopplade events */}
-              {task.event_id && (
-                <EventList>
-                  <strong>Event:</strong>{' '}
-                  {events.find(event => event.id === task.event_id)?.title ?? '(okänt event)'}
-                </EventList>
-              )}
-
-              <DeleteButton onClick={() => deleteTask(task.id)}>Radera</DeleteButton>
-            </TaskItem>
-          ))}
-        {filteredTasks.length === 0 && <p>Inga uppgifter att visa.</p>}
-      </TaskList>
     </Container >
   );
 }
 
-export default Tasks;
+export default WeeklySchedule;
 
 // Styled Components för enkel styling
 const Container = styled.div`
@@ -523,7 +481,7 @@ const Title = styled.h3`
   margin-top: 1rem;
 `;
 
-const WeeklySchedule = styled.div`
+const WeeklyScheduleContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   margin-top: 0.4rem;
@@ -567,43 +525,15 @@ const RecurringTaskItem = styled.li<{ $completed: boolean }>`
   position: relative;
 `;
 
-const TaskList = styled.ul`
-  margin: 0 auto;
-  max-width: 300px;
-  list-style-type: none;
-  padding: 0;
-`;
-
-const TaskItem = styled.li<{ $completed: boolean }>`
-  position: relative;
-  border: 1px solid #ccc;
-  margin: .3em 0;
-  padding: 1em;
-  color:  ${props => (props.$completed ? 'rgb(134, 134, 134)' : 'rgb(0, 0, 0)')};
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
-  background-color: ${props => (props.$completed ? 'rgb(209, 209, 209)' : ' #f9f9f9')};
-`;
-
 const TaskTitle = styled.span<{ $completed: boolean }>`
   font-weight: bold;
   text-decoration: ${props => (props.$completed ? 'line-through' : 'none')};
   margin-left: 0.5rem;
 `;
 
-const DueDate = styled.div`
-  font-size: 0.85rem;
-  color: #666;
-`;
-
 const Description = styled.div`
   margin-top: 0.25rem;
   font-style: italic;
-`;
-
-const EventList = styled.div`
-  font-size: 0.85rem;
-  margin-top: 0.25rem;
 `;
 
 const FamilyMembers = styled.div`

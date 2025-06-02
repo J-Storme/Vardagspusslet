@@ -307,10 +307,22 @@ app.post('/logout', authenticate, async (request, response) => {
 
 
 // GET tasks
-app.get('/api/tasks', authenticate, async (_request, response) => {
+app.get('/api/tasks', authenticate, async (request, response) => {
+  const userId = (request as UserRequest).user?.id;
+
   try {
-    // Hämta alla tasks (kan lägga till ORDER BY om du vill sortera)
-    const tasksResult = await client.query('SELECT * FROM tasks ORDER BY due_date ASC');
+    // Hämta alla tasks som är kopplade till familjemedlemmar som tillhör användaren
+    const tasksResult = await client.query(
+      `
+      SELECT DISTINCT tasks.*
+      FROM tasks
+      JOIN task_family_members tasksfamilym ON tasks.id = tasksfamilym.task_id
+      JOIN family_members fm ON tasksfamilym.family_member_id = fm.id
+      WHERE fm.user_id = $1
+      ORDER BY tasks.due_date ASC
+      `,
+      [userId]
+    );
     const tasks = tasksResult.rows;
 
     // Hämta familjemedlemmar kopplade till varje task
@@ -336,38 +348,6 @@ app.get('/api/tasks', authenticate, async (_request, response) => {
     response.status(500).json({ error: 'Kunde inte hämta tasks' });
   }
 });
-
-/*
-app.get('/api/tasks', authenticate, async (request, response) => {
-  const userId = (request as UserRequest).user?.id;
-
-  try {
-    const result = await client.query(
-      `SELECT
-         tasks.id,
-         tasks.title,
-         tasks.description,
-         tasks.due_date,
-         tasks.completed,
-         tasks.event_id,
-         JSON_AGG(
-           DISTINCT jsonb_build_object('id', family_members.id, 'name', family_members.name)
-         ) FILTER (WHERE family_members.id IS NOT NULL) AS assigned_family_members
-       FROM tasks
-       LEFT JOIN task_family_members ON tasks.id = task_family_members.task_id
-       LEFT JOIN family_members ON task_family_members.family_member_id = family_members.id
-       WHERE family_members.user_id = $1
-       GROUP BY tasks.id
-       ORDER BY tasks.id`,
-      [userId]
-    );
-
-    response.status(200).json(result.rows);
-  } catch (error) {
-    console.error('Fel vid hämtning av uppgifter:', error);
-    response.status(500).send('Serverfel vid hämtning av uppgifter');
-  }
-}); */
 
 
 // POST tasks
@@ -477,7 +457,7 @@ app.put('/api/tasks/:id', authenticate, async (request, response) => {
 });
 
 
-//Delete tasks
+//DELETE tasks
 app.delete('/api/tasks/:id', authenticate, async (request, response) => {
   const taskId = request.params.id;
   const userId = (request as UserRequest).user?.id;
@@ -509,9 +489,22 @@ app.delete('/api/tasks/:id', authenticate, async (request, response) => {
 
 
 // GET events
-app.get('/api/events', authenticate, async (_request, response) => {
+app.get('/api/events', authenticate, async (request, response) => {
+  const userId = (request as UserRequest).user?.id;
+
+  //Hämta bara familjemedlemmar som hör till inlogagd användare
   try {
-    const eventsResult = await client.query('SELECT * FROM events ORDER BY event_date ASC');
+    const eventsResult = await client.query(
+      `
+      SELECT DISTINCT events.*
+      FROM events
+      JOIN event_family_members efm ON events.id = efm.event_id
+      JOIN family_members fm ON efm.family_member_id = fm.id
+      WHERE fm.user_id = $1
+      ORDER BY events.event_date ASC
+      `,
+      [userId]
+    );
     const events = eventsResult.rows;
 
     // Hämta familjemedlemmar kopplade till varje event
@@ -523,7 +516,7 @@ app.get('/api/events', authenticate, async (_request, response) => {
          WHERE event_family_members.event_id = $1`,
         [event.id]
       );
-      //event.family_member_ids = familyResult.rows.map(row => row.family_member_id);
+
       event.family_member_ids = familyResult.rows.map(row => row.id);
       event.family_members = familyResult.rows;
     }
@@ -562,7 +555,6 @@ app.post('/api/events', authenticate, async (request, response) => {
     }
 
     // Hämta event inklusive kopplade family_member_ids
-    //const eventFamilyResult = await client.query( Kan ev utesluta role
     const familyMembersResult = await client.query(
       `SELECT family_members.id, family_members.name, family_members.role, family_members.profile_image
       FROM family_members
@@ -623,40 +615,185 @@ app.delete('/api/events/:id', authenticate, async function (request, response) {
 });
 
 
-//Vecko-tasks
-app.get('/api/week-tasks', authenticate, async (_request, response) => {
+//GET Veckoschema
+app.get('/api/week-tasks', authenticate, async (request, response) => {
   try {
-    // Räkna fram datum för veckans måndag och söndag (serverns tid)
+    const userId = (request as UserRequest).user?.id;
+
     const now = new Date();
-    const day = now.getDay(); // 0 = söndag, 1 = måndag...
+    const day = now.getDay();
     const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); // Räkna ut måndag
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
 
-    // Formatera till yyyy-mm-dd för SQL
     const mondayStr = monday.toISOString().slice(0, 10);
     const sundayStr = sunday.toISOString().slice(0, 10);
 
-    // Hämta engångs-uppgifter i denna vecka
+    // Hämta engångs-uppgifter för inloggad användare
     const singleTasksResult = await client.query(
-      `SELECT * FROM tasks WHERE due_date BETWEEN $1 AND $2 ORDER BY due_date`,
-      [mondayStr, sundayStr]
+      `SELECT * FROM tasks WHERE due_date BETWEEN $1 AND $2 AND user_id = $3 ORDER BY due_date`,
+      [mondayStr, sundayStr, userId]
     );
     const singleTasks = singleTasksResult.rows;
 
-    // Hämta återkommande tasks (recurring_weekday 0-6)
+    // Hämta återkommande uppgifter för inloggad användare
     const recurringTasksResult = await client.query(
-      `SELECT * FROM tasks WHERE recurring_weekday IS NOT NULL ORDER BY recurring_weekday`
+      `SELECT * FROM tasks WHERE recurring_weekday IS NOT NULL AND user_id = $1 ORDER BY recurring_weekday`,
+      [userId]
     );
     const recurringTasks = recurringTasksResult.rows;
 
-    // Skicka tillbaka båda listorna
     response.json({ singleTasks, recurringTasks });
 
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: 'Kunde inte hämta veckans tasks' });
+  }
+});
+
+
+//POST Veckoschema
+app.post('/api/week-tasks', authenticate, async (request, response) => {
+  try {
+    const { title, description, recurring_weekday, family_member_ids, event_id } = request.body;
+    const userId = (request as UserRequest).user?.id;
+
+    console.log('recurring_weekday:', recurring_weekday);
+    console.log('family_member_ids:', family_member_ids);
+
+    // Kontrollera att family_member_ids tillhör användaren
+    if (family_member_ids && family_member_ids.length > 0) {
+      const checkFamilyMembers = await client.query(
+        `SELECT id FROM family_members WHERE id = ANY($1) AND user_id = $2`,
+        [family_member_ids, userId]
+      );
+
+      if (checkFamilyMembers.rows.length !== family_member_ids.length) {
+        return response.status(403).json({ error: 'En eller flera familjemedlemmar tillhör inte dig' });
+      }
+    }
+
+
+    const insertTaskResult = await client.query(
+      `INSERT INTO tasks (title, description, event_id, user_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [title, description, event_id || null, userId]
+    );
+
+    const newTask = insertTaskResult.rows[0];
+
+    // Lägg till kopplingar i task_family_members
+    if (family_member_ids && family_member_ids.length > 0) {
+      for (const familyMemberId of family_member_ids) {
+        await client.query(
+          `INSERT INTO task_family_members (task_id, family_member_id) VALUES ($1, $2)`,
+          [newTask.id, familyMemberId]
+        );
+      }
+    }
+
+    // Lägg till kopplingar i task_weekdays, ta bort nullvärden
+    if (Array.isArray(recurring_weekday) && recurring_weekday.length > 0) {
+      const filteredWeekdays = recurring_weekday.filter(day => day !== null && day !== undefined);
+      for (const weekday of filteredWeekdays) {
+        await client.query(
+          `INSERT INTO task_weekdays (task_id, weekday) VALUES ($1, $2)`,
+          [newTask.id, weekday]
+        );
+      }
+    }
+
+    // Hämta kopplingar
+    const familyMembersResult = await client.query(
+      `SELECT family_member_id FROM task_family_members WHERE task_id = $1`,
+      [newTask.id]
+    );
+    const family_member_ids_from_db = familyMembersResult.rows.map(row => row.family_member_id);
+
+    const recurringWeekdaysResult = await client.query(
+      `SELECT weekday FROM task_weekdays WHERE task_id = $1`,
+      [newTask.id]
+    );
+    const recurring_weekdays_from_db = recurringWeekdaysResult.rows.map(row => row.weekday);
+
+    const completeTask = {
+      ...newTask,
+      family_member_ids: family_member_ids_from_db,
+      recurring_weekday: recurring_weekdays_from_db,
+    };
+
+    response.status(201).json(completeTask);
+
+  } catch (error) {
+    console.error('Fel vid skapande av veckouppgift:', error);
+    response.status(500).json({ error: 'Kunde inte skapa veckouppgift' });
+  }
+});
+
+
+// PUT veckoschema
+app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
+  // Hämta id för uppgiften från URL-parametern
+  const taskId = request.params.id;
+  // Hämta inloggad användares id från request (från autentisering)
+  const userId = (request as UserRequest).user?.id;
+  // Hämta data som ska uppdateras från request body
+  const { title, description, due_date, completed, family_member_ids, event_id, recurring_weekday } = request.body;
+
+  try {
+    // Kontrollera att uppgiften finns
+    const checkResult = await client.query(
+      `SELECT * FROM tasks WHERE id = $1`,
+      [taskId]
+    );
+
+    if (checkResult.rows.length === 0) {
+      return response.status(404).json({ error: 'Uppgift hittades inte' });
+    }
+
+    // Uppdatera uppgiften
+    await client.query(
+      `UPDATE tasks SET
+        title = $1,
+        description = $2,
+        due_date = $3,
+        completed = $4,
+        event_id = $5,
+        recurring_weekday = $6
+       WHERE id = $7`,
+      [
+        title,
+        description,
+        due_date || null,
+        completed === undefined ? false : completed,
+        event_id || null,
+        recurring_weekday || null,
+        taskId
+      ]
+    );
+
+    // Uppdatera kopplingar i task_family_members
+    if (Array.isArray(family_member_ids)) {
+      // Radera gamla kopplingar först
+      await client.query(
+        `DELETE FROM task_family_members WHERE task_id = $1`,
+        [taskId]
+      );
+
+      // Lägg till nya kopplingar
+      for (const familyMemberId of family_member_ids) {
+        await client.query(
+          `INSERT INTO task_family_members (task_id, family_member_id) VALUES ($1, $2)`,
+          [taskId, familyMemberId]
+        );
+      }
+    }
+
+    response.status(200).json({ message: 'Uppgift uppdaterad' });
+
+  } catch (error) {
+    console.error('Fel vid uppdatering av uppgift:', error);
+    response.status(500).json({ error: 'Kunde inte uppdatera uppgift' });
   }
 });
 

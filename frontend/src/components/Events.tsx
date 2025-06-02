@@ -252,7 +252,7 @@ function Events({ userId, token }: Props) {
         <EventList>
           {events.map(event => (
             <EventItem key={event.id}>
-              <DeleteButton onClick={() => handleDelete(event.id)}>×</DeleteButton>
+              <DeleteButton onClick={() => handleDelete(event.id)}>Radera</DeleteButton>
               <strong>{event.title}</strong>
               <br />
               { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
@@ -346,7 +346,7 @@ const CheckboxLabel = styled.label`
 `;
 
 const SubmitButton = styled.button`
-  background-color: #4caf50;
+  background-color: rgb(117, 119, 212);
   color: white;
   font-weight: bold;
   padding: 0.75rem 1.25rem;
@@ -356,7 +356,7 @@ const SubmitButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: #43a047;
+    background-color: rgb(115, 221, 120);
   }
 `;
 
@@ -374,35 +374,34 @@ const EventList = styled.ul`
   list-style-type: none;
   padding-left: 0;
   max-width: 700px;
+  min-width: 300px;
   margin: 0 auto;
-  
-`;
-
+  `;
 
 const EventItem = styled.li`
 position: relative;
 border: 1px solid #ccc;
 margin: 1em 0;
 padding: 1em;
-border - radius: 8px;
-background - color: rgb(232, 232, 235);
+border-radius: 8px;
+box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
+background-color: rgb(232, 232, 235);
 `;
 
 const DeleteButton = styled.button`
 position: absolute;
-top: 1px;
-right: 0px;
-background: transparent;
-color: rgb(14, 13, 13);
-font - size: 20px;
+top: 8px;
+right: 6px;
+font-size: 11px;
+background:rgb(116, 112, 111);
+color: rgb(255, 255, 255);
 cursor: pointer;
-margin - left: 10px;
-padding: 0.75rem 1.25rem;
+padding: 0.15rem .5rem;
 border: 1px;
-border - radius: 8px;
+border-radius: 8px;
 transition: background - color 0.3s;
 
   &:hover {
-  color: rgb(173, 3, 3);
+  background: rgb(189, 11, 11);
 }
 `;

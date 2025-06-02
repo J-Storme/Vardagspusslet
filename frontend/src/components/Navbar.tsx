@@ -33,12 +33,17 @@ function Navbar() {
         </NavbarItemWithDropdown>
 
         <NavbarItem>
-          <NavbarLink to="/tasks">Tasks</NavbarLink>
+          <NavbarLink to="/tasks">To-do</NavbarLink>
+        </NavbarItem>
+
+        <NavbarItem>
+          <NavbarLink to="/weeklyschedule">Veckoschema</NavbarLink>
         </NavbarItem>
 
         <NavbarItem>
           <NavbarLink to="/account">Hantera konto</NavbarLink>
         </NavbarItem>
+
       </NavbarList>
 
       <TasksIconContainer>
@@ -58,23 +63,6 @@ const TasksIconContainer = styled.div`
   left: -10px;
 `;
 
-const TasksIconImage = styled.img`
-  width: 40px;
-  height: 40px;
-`;
-
-const NumberofItems = styled.span`
-  position: absolute;
-  top: 10px;
-  right: -14px;
-  background-color: rgb(241, 36, 180);
-  color: #ffffff;
-  padding: 3px 6px;
-  font-size: 12px;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-`;
 
 const TasksIconWithHover = styled.div`
   position: relative;

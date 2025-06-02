@@ -2,7 +2,6 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useLogin } from '../context/LoginContext';
-import Button from '../components/Button';
 
 function Register() {
   const [name, setName] = useState('');
@@ -91,6 +90,9 @@ function Register() {
   );
 }
 
+export default Register;
+
+// Styling
 const RegisterContainer = styled.div`
   padding: 20px;
   max-width: 400px;
@@ -117,4 +119,22 @@ const LabelRow = styled.div`
   }
 `;
 
-export default Register;
+const Button = styled.button`
+  display: inline-block;
+  background-color:rgb(117, 119, 212);
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1.25rem;
+  border: none;
+  margin-left: 7rem;
+  margin-right: 0px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color:rgb(138, 212, 142);
+  }
+`;
+
+

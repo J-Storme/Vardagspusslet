@@ -58,6 +58,7 @@ description TEXT,
 due_date DATE, 
 completed BOOLEAN DEFAULT FALSE, 
 event_id INTEGER REFERENCES events(id), 
+user_id INTEGER REFERENCES users(id),
 recurring_weekday INTEGER
 );
 

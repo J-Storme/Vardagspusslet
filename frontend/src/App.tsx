@@ -9,6 +9,7 @@ import Tasks from './pages/Tasks';
 import Account from './pages/Account';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import WeeklySchedule from './pages/WeeklySchedule';
 
 
 
@@ -17,7 +18,6 @@ function App() {
     fetch('/api')
       .then((response) => response.json())
       .then((result) => {
-        //alert(`Hello ${result.hello}!`)
       })
   }, [])
 
@@ -35,6 +35,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/account" element={<Account />} />
+              <Route path="/weeklyschedule" element={<WeeklySchedule />} />
             </Routes>
           </AppContainer>
         </BrowserRouter>

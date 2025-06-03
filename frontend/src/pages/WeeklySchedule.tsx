@@ -442,69 +442,8 @@ function WeeklySchedule() {
       </FormContainer>
 
       <Title>Veckoschema</Title>
-      <WeeklyScheduleContainer>
-        <WeekGrid>
-          {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
-            const tasksForDay = testFilteredTasks.filter(task =>
-              Array.isArray(task.recurring_weekdays) &&
-              task.recurring_weekdays.map(Number).includes(weekdayMap[day])
-            );
-
-            console.log(`Tasks for ${day}:`, tasksForDay);
-
-            return (
-              <DayColumn key={day}>
-                <DayTitle>{day.charAt(0).toUpperCase() + day.slice(1)}</DayTitle>
-                {tasksForDay.length > 0 ? (
-                  <ul>
-                    {tasksForDay.map(task => {
-                      // Om ingen kategori finns, fallback till exempelvis ljusgrå
-                      const categoryColor = task.category_color ?? '#ccc';
-
-                      // 3. Returnera JSX för just den här tasken
-                      return (
-                        <RecurringTaskItem
-                          key={task.id}
-                          $completed={task.completed}
-                          $categoryColor={categoryColor}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => toggleTaskCompleted(task)}
-                          />
-                          <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
-                          {task.description && <Description>{task.description}</Description>}
-
-                          {task.family_member_ids && task.family_member_ids.length > 0 && (
-                            <FamilyMembers>
-                              {getFamilyMemberNames(task.family_member_ids)}
-                            </FamilyMembers>
-                          )}
-
-                          <DeleteButton onClick={() => deleteTask(task.id)}>x</DeleteButton>
-                        </RecurringTaskItem>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p></p>
-                )}
-              </DayColumn>
-            );
-          })}
-        </WeekGrid>
-
-      </WeeklyScheduleContainer>
-
-      {!isAddingTask && (
-        <SubmitButton onClick={() => setIsAddingTask(true)}>
-          Lägg till ny uppgift
-        </SubmitButton>
-      )}
 
       <Filter>
-        <Title>Uppgifter</Title>
         <div>
           <label>Filtrera på familjemedlem: </label>
           <select
@@ -539,6 +478,66 @@ function WeeklySchedule() {
         </div>
       </Filter>
 
+      <WeeklyScheduleContainer>
+        <WeekGrid>
+          {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
+            const tasksForDay = testFilteredTasks.filter(task =>
+              Array.isArray(task.recurring_weekdays) &&
+              task.recurring_weekdays.map(Number).includes(weekdayMap[day])
+            );
+
+            console.log(`Tasks for ${day}:`, tasksForDay);
+
+            return (
+              <DayColumn key={day}>
+                <DayTitle>{day.charAt(0).toUpperCase() + day.slice(1)}</DayTitle>
+                {tasksForDay.length > 0 ? (
+                  <ul>
+                    {tasksForDay.map(task => {
+                      // Om ingen kategori finns, fallback till ljusgrå
+                      const categoryColor = task.category_color ?? '#ccc';
+
+                      // Returnera JSX för just den här tasken
+                      return (
+                        <RecurringTaskItem
+                          key={task.id}
+                          $completed={task.completed}
+                          $categoryColor={categoryColor}
+                        >
+                          <BoxContainers>
+                            <CheckboxStyled><input type="checkbox" checked={task.completed} onChange={() => toggleTaskCompleted(task)} /></CheckboxStyled>
+                            <DeleteButton onClick={() => deleteTask(task.id)}>x</DeleteButton>
+                          </BoxContainers>
+                          <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
+                          {task.description && <Description>{task.description}</Description>}
+
+                          {task.family_member_ids && task.family_member_ids.length > 0 && (
+                            <FamilyMembers>
+                              {getFamilyMemberNames(task.family_member_ids)}
+                            </FamilyMembers>
+                          )}
+
+
+                        </RecurringTaskItem>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p></p>
+                )}
+              </DayColumn>
+            );
+          })}
+        </WeekGrid>
+
+      </WeeklyScheduleContainer>
+
+      {!isAddingTask && (
+        <SubmitButton onClick={() => setIsAddingTask(true)}>
+          Lägg till ny uppgift
+        </SubmitButton>
+      )}
+
     </Container >
   );
 }
@@ -554,8 +553,7 @@ const Container = styled.div`
 
 const Filter = styled.div`
 text-align: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
+  margin-top: 20px;  
   padding: 0px;
   `;
 
@@ -579,8 +577,8 @@ const Form = styled.div`
 `;
 
 const Title = styled.h3`
-  text-align: center;
-  margin-top: 1rem;
+  text-align: center;  
+  font-size: 28px;
 `;
 
 const WeeklyScheduleContainer = styled.div`
@@ -594,7 +592,7 @@ const WeekGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(7, 1fr); 
   gap: 0.2rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 `;
 
 const DayColumn = styled.div`
@@ -628,10 +626,32 @@ const RecurringTaskItem = styled.li<{ $completed: boolean; $categoryColor: strin
   position: relative;
 `;
 
+const BoxContainers = styled.div`
+  display: flex; 
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  `;
+
 const TaskTitle = styled.span<{ $completed: boolean }>`
+  display: flex; 
+  justify-content: flex-end;
   font-weight: bold;
+  font-size: 14px;  
   text-decoration: ${props => (props.$completed ? 'line-through' : 'none')};
-  margin-left: 0.5rem;
+  margin-left: 0.4rem;
+`;
+
+const CheckboxStyled = styled.div`
+  display: flex;
+  align-items: center;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: rgb(117, 119, 212); 
+    cursor: pointer;
+  }
 `;
 
 const Description = styled.div`
@@ -644,6 +664,7 @@ const FamilyMembers = styled.div`
   justify-content: flex-end;
   margin-top: 0.5rem;
   color: #333;
+  font-size: 11px;
 `;
 
 const StyledFieldset = styled.fieldset`
@@ -653,16 +674,16 @@ const StyledFieldset = styled.fieldset`
 `;
 
 const DeleteButton = styled.button`
-position: absolute;
-top: 8px;
-right: 6px;
+display: flex; 
+justify-content: space-between;
+
 background:rgb(116, 112, 111);
 color: rgb(255, 255, 255);
-font-size: 11px;
+font-size: 10px;
 cursor: pointer;
-padding: 0.15rem .5rem;
+padding: 0.13rem .4rem;
 border: 1px;
-border-radius: 8px;
+border-radius: 6px;
 
   &:hover {
   background: rgb(189, 11, 11);

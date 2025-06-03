@@ -623,17 +623,43 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
     // Hämta återkommande uppgifter med veckodag som array
     const recurringTasksResult = await client.query(
       `
-  SELECT t.*, COALESCE(array_agg(tw.weekday) FILTER (WHERE tw.weekday IS NOT NULL), '{}') AS recurring_weekdays
-  FROM tasks t
-  LEFT JOIN task_weekdays tw ON tw.task_id = t.id
-  WHERE t.user_id = $1
-  GROUP BY t.id
-  ORDER BY t.title
-  `,
+      SELECT
+        t.id,
+        t.title,
+        t.description,
+        t.due_date,
+        t.completed,
+        t.event_id,
+        t.user_id,
+        t.category_id,
+
+        -- Aggregera återkommande veckodagar till en array
+        COALESCE(
+          array_agg(tw.weekday) FILTER (WHERE tw.weekday IS NOT NULL),
+          '{}'
+        ) AS recurring_weekdays,
+
+        -- Hämta kategoriinfo från categories‐tabellen
+        c.name  AS category_name,
+        c.color AS category_color,
+        c.icon  AS category_icon
+
+      FROM tasks t
+      LEFT JOIN task_weekdays tw ON tw.task_id = t.id
+      LEFT JOIN categories c       ON t.category_id = c.id
+      WHERE t.user_id = $1
+      GROUP BY 
+        t.id,
+        c.name,
+        c.color,
+        c.icon
+      ORDER BY t.title
+      `,
       [userId]
     );
 
     const recurringTasks = recurringTasksResult.rows;
+    console.log('recurringTasksResult.rows:', recurringTasksResult.rows)
 
     response.json({ recurringTasks });
 
@@ -648,7 +674,7 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
 app.post('/api/week-tasks', authenticate, async (request, response) => {
   console.log('Request body:', request.body);
   try {
-    const { title, description, recurring_weekdays, family_member_ids } = request.body;
+    const { title, description, recurring_weekdays, family_member_ids, category_id } = request.body;
     const userId = (request as UserRequest).user?.id;
 
     // Kontrollera att family_member_ids tillhör användaren
@@ -663,10 +689,10 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
       }
     }
 
-
+    // Lägg till uppgiften i tabell task
     const insertTaskResult = await client.query(
-      `INSERT INTO tasks (title, description, user_id) VALUES ($1, $2, $3) RETURNING *`,
-      [title, description, userId]
+      `INSERT INTO tasks (title, description, user_id, category_id) VALUES ($1, $2, $3, $4) RETURNING *`,
+      [title, description, userId, category_id]
     );
 
     const newTask = insertTaskResult.rows[0];
@@ -705,10 +731,28 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
     );
     const recurring_weekdays_from_db = recurringWeekdaysResult.rows.map(row => row.weekday);
 
+    // Hämta kopplingar till categories
+    const categoryInfoResult = await client.query(
+      `
+      SELECT
+        c.name  AS category_name,
+        c.color AS category_color,
+        c.icon  AS category_icon
+      FROM categories c
+      WHERE c.id = $1
+      `,
+      [newTask.category_id]
+    );
+    const categoryRow = categoryInfoResult.rows[0] || { category_name: null, category_color: null, category_icon: null };
+
+    // Bygg ett objektet som kan skickas som svar
     const completeTask = {
       ...newTask,
       family_member_ids: family_member_ids_from_db,
       recurring_weekdays: recurring_weekdays_from_db,
+      category_name: categoryRow.category_name,
+      category_color: categoryRow.category_color,
+      category_icon: categoryRow.category_icon
     };
 
     console.log('recurring_weekdays:', recurring_weekdays);
@@ -732,7 +776,7 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
   // Hämta inloggad användares id från request (från autentisering)
   const userId = (request as UserRequest).user?.id;
   // Hämta data som ska uppdateras från request body
-  const { title, description, completed, family_member_ids, recurring_weekdays } = request.body;
+  const { title, description, completed, family_member_ids, recurring_weekdays, category_id } = request.body;
 
   try {
     // Kontrollera att uppgiften finns
@@ -750,12 +794,14 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
       `UPDATE tasks SET
         title = $1,
         description = $2,
-        completed = $3
-      WHERE id = $4`,
+        completed = $3,
+        category_id = $4
+      WHERE id = $5`,
       [
         title,
         description,
         completed === undefined ? false : completed,
+        category_id,
         taskId
       ]
     );
@@ -827,6 +873,21 @@ app.delete('/api/week-tasks/:id', authenticate, async (request, response) => {
   } catch (error) {
     console.error('Fel vid radering av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte radera uppgiften' });
+  }
+});
+
+// GET kategorier 
+app.get('/api/categories', async (_request, response) => {
+  try {
+
+    const result = await client.query(
+      `SELECT id, name, color, icon FROM categories ORDER BY name`
+    );
+
+    response.json(result.rows);
+  } catch (error) {
+    console.error('Fel vid hämtning av kategorier:', error);
+    response.status(500).json({ error: 'Kunde inte hämta kategorier' });
   }
 });
 

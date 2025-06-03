@@ -28,9 +28,13 @@ icon TEXT
 );
 
 INSERT INTO categories (name, color) VALUES
-('Läxor', '#FF5733'),
-('Träning', '#33FF57'),
-('Städning', '#3357FF');
+('Läxor', 'rgb(255, 173, 173)'),
+('Träning', 'rgb(155, 246, 255)'),
+('Fritidsaktivitet', 'rgb(255, 214, 165)'),
+('Städning', 'rgb(160, 196, 255)'),
+('Jobb', 'rgb(253, 255, 182)'),
+('Skola', 'rgb(189, 178, 255)'),
+('Övrigt', 'rgb(202, 255, 191)');
 
 --  events
 DROP TABLE IF EXISTS events;

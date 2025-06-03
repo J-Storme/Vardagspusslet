@@ -11,6 +11,10 @@ interface Task {
   family_member_ids: number[];
   recurring: boolean;
   recurring_weekdays?: number[];
+  category_id: number | null;
+  category_name?: string;
+  category_color?: string;
+  category_icon?: string;
 }
 
 interface FamilyMember {
@@ -20,6 +24,12 @@ interface FamilyMember {
   profile_image: string;
 }
 
+interface Category {
+  id: number;
+  name: string;
+  color: string;
+}
+
 function WeeklySchedule() {
   // states
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -27,13 +37,17 @@ function WeeklySchedule() {
   const [selectedFamilyMemberIdForFilter, setSelectedFamilyMemberIdForFilter] = useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategoryForFilter, setSelectedCategoryForFilter] = useState<string>('all');
+  const [isAddingTask, setIsAddingTask] = useState(false); // Lägg till så att lägga-till-formuläret visas ej från början
+
 
   // State för nya uppgifter (inputfält)
-  const [isAddingTask, setIsAddingTask] = useState(false); // Lägg till så att lägga-till-formuläret visas ej från början
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newSelectedFamilyMemberIds, setNewSelectedFamilyMemberIds] = useState<number[]>([]);
   const [newRecurringWeekday, setNewRecurringWeekday] = useState<number[]>([]);
+  const [newCategoryId, setNewCategoryId] = useState<number | null>(null);
 
   const weekdayMap: { [key: string]: number } = {
     måndag: 1,
@@ -45,6 +59,7 @@ function WeeklySchedule() {
     söndag: 7,
   };
 
+
   // Hämta data när komponenten laddas
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -54,7 +69,6 @@ function WeeklySchedule() {
       setLoading(false);
       return;
     }
-
 
     // Hämta tasks
     function fetchTasks() {
@@ -82,9 +96,22 @@ function WeeklySchedule() {
       });
     }
 
+    // Hämta kategorier
+    function fetchCategories() {
+      return fetch('http://localhost:8080/api/categories', {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(response => {
+        console.log('fetchCategories status:', response.status);
+        if (!response.ok) {
+          throw new Error('Kunde inte hämta kategorier');
+        }
+        return response.json();
+      });
+    }
+
     // Hämta allt parallellt
-    Promise.all([fetchTasks(), fetchFamilyMembers()])
-      .then(([tasksData, familyMembersData]) => {
+    Promise.all([fetchTasks(), fetchFamilyMembers(), fetchCategories()])
+      .then(([tasksData, familyMembersData, categoriesData]) => {
         console.log('tasksData från backend:', tasksData);
         if (Array.isArray(tasksData.recurringTasks)) {
           setTasks(tasksData.recurringTasks);
@@ -92,6 +119,7 @@ function WeeklySchedule() {
           console.warn('recurringTasks är inte en array:', tasksData.recurringTasks);
         }
         setFamilyMembers(familyMembersData);
+        setCategories(categoriesData);
         setLoading(false);
       })
       .catch(error => {
@@ -100,6 +128,7 @@ function WeeklySchedule() {
         setLoading(false);
       });
   }, []);
+
 
   // POST Lägg till ny uppgift
   function addTask() {
@@ -124,6 +153,7 @@ function WeeklySchedule() {
       family_member_ids: newSelectedFamilyMemberIds,
       recurring: true,
       recurring_weekdays: newRecurringWeekday,
+      category_id: newCategoryId
     };
 
     //console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
@@ -158,6 +188,8 @@ function WeeklySchedule() {
         setNewTitle('');
         setNewDescription('');
         setNewSelectedFamilyMemberIds([]);
+        setNewCategoryId(null);
+        setNewRecurringWeekday([]);
         setIsAddingTask(false); // Stänger formuläret för att skapa uppgift
       })
       .catch(error => {
@@ -198,17 +230,42 @@ function WeeklySchedule() {
 
   const filteredTasks = safeTasks.filter(task => {
     const isRecurring = Array.isArray(task.recurring_weekdays) && task.recurring_weekdays.length > 0;
+
+    if (!isRecurring) {
+      return false; // Endast uppgifter med återkommande veckodagar visas
+    }
+
+    // Kontrollera familjemedlemsfilter
+    const matchesFamilyMember = selectedFamilyMemberIdForFilter === 'all' ||
+      task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number);
+
+    // Kontrollera kategori-filter
+    const matchesCategory = selectedCategoryForFilter === 'all'
+      || (task.category_name && task.category_name === selectedCategoryForFilter);
+
+    // Båda filter måste stämma för att visa uppgiften
+    return matchesFamilyMember && matchesCategory;
+  });
+
+
+  /*
+  const filteredTasks = safeTasks.filter(task => {
+    const isRecurring = Array.isArray(task.recurring_weekdays) && task.recurring_weekdays.length > 0;
     if (selectedFamilyMemberIdForFilter === 'all') {
       return isRecurring;
     }
     return isRecurring && task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number);
   });
 
+  */
+
   console.log('Filtered tasks:', filteredTasks);
 
 
   if (loading) return <p>Laddar uppgifter...</p>;
   if (error) return <p>{error}</p>;
+
+
 
   function getFamilyMemberNames(ids: number[]): string {
     const names = familyMembers
@@ -217,6 +274,7 @@ function WeeklySchedule() {
     // Slå ihop namnen till en sträng
     return names.join(', ');
   }
+
 
   // PUT, uppdatera checkbox
   function toggleTaskCompleted(task: Task) {
@@ -260,6 +318,7 @@ function WeeklySchedule() {
   }
 
   const testFilteredTasks = filteredTasks;
+
 
   return (
     <Container>
@@ -352,6 +411,28 @@ function WeeklySchedule() {
                   ))}
                 </StyledFieldset>
 
+                <StyledFieldset>
+                  <label>
+                    Kategori: <br />
+                    <select
+                      value={newCategoryId ?? ''}
+                      onChange={event => {
+                        const val = event.target.value;
+                        setNewCategoryId(val !== '' ? Number(val) : null);
+                      }}
+                    >
+                      <option value="">Ingen kategori</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <br />
+                </StyledFieldset>
+
+
                 <SubmitButton type="button" onClick={addTask}>Lägg till uppgift</SubmitButton>
               </Form>
             )}
@@ -375,25 +456,35 @@ function WeeklySchedule() {
                 <DayTitle>{day.charAt(0).toUpperCase() + day.slice(1)}</DayTitle>
                 {tasksForDay.length > 0 ? (
                   <ul>
-                    {tasksForDay.map(task => (
-                      <RecurringTaskItem key={task.id} $completed={task.completed}>
-                        <input
-                          type="checkbox"
-                          checked={task.completed}
-                          onChange={() => toggleTaskCompleted(task)}
-                        />
-                        <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
-                        {task.description && <Description>{task.description}</Description>}
+                    {tasksForDay.map(task => {
+                      // Om ingen kategori finns, fallback till exempelvis ljusgrå
+                      const categoryColor = task.category_color ?? '#ccc';
 
+                      // 3. Returnera JSX för just den här tasken
+                      return (
+                        <RecurringTaskItem
+                          key={task.id}
+                          $completed={task.completed}
+                          $categoryColor={categoryColor}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={task.completed}
+                            onChange={() => toggleTaskCompleted(task)}
+                          />
+                          <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
+                          {task.description && <Description>{task.description}</Description>}
 
-                        {task.family_member_ids && task.family_member_ids.length > 0 && (
-                          <FamilyMembers>{getFamilyMemberNames(task.family_member_ids)}</FamilyMembers>
-                        )}
+                          {task.family_member_ids && task.family_member_ids.length > 0 && (
+                            <FamilyMembers>
+                              {getFamilyMemberNames(task.family_member_ids)}
+                            </FamilyMembers>
+                          )}
 
-                        <DeleteButton onClick={() => deleteTask(task.id)}>x</DeleteButton>
-
-                      </RecurringTaskItem>
-                    ))}
+                          <DeleteButton onClick={() => deleteTask(task.id)}>x</DeleteButton>
+                        </RecurringTaskItem>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p></p>
@@ -402,6 +493,7 @@ function WeeklySchedule() {
             );
           })}
         </WeekGrid>
+
       </WeeklyScheduleContainer>
 
       {!isAddingTask && (
@@ -428,6 +520,19 @@ function WeeklySchedule() {
             <option value="all">Alla familjemedlemmar</option>
             {familyMembers.map(member => (
               <option key={member.id} value={member.id}>{member.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Filtrera på kategori: </label>
+          <select
+            value={selectedCategoryForFilter}
+            onChange={event => setSelectedCategoryForFilter(event.target.value)}
+          >
+            <option value="all">Alla kategorier</option>
+            {categories.map(category => (
+              <option key={category.id} value={category.name}>{category.name}</option>
             ))}
           </select>
         </div>
@@ -501,20 +606,21 @@ const DayColumn = styled.div`
 `;
 
 const DayTitle = styled.h4`
-  background-color: rgb(117, 119, 212);
+  background-color: rgb(79, 120, 182);
   color: white;
   border-radius: 3px;
   padding: 2px;
   text-align: center;
   margin-bottom: 0.5rem;
+  rgb(117, 119, 212);
 `;
 
-const RecurringTaskItem = styled.li<{ $completed: boolean }>`
+const RecurringTaskItem = styled.li<{ $completed: boolean; $categoryColor: string }>`
   border: 1px solid #ccc;
   padding: 0.75rem;
   margin-bottom: 0.5rem;
   border-radius: 8px;
-  background-color: ${props => (props.$completed ? '#ddd' : '#fff')};
+  background-color: ${props => (props.$completed ? '#ddd' : props.$categoryColor)};
   color: ${props => (props.$completed ? '#666' : '#000')};
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   list-style: none;

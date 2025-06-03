@@ -27,6 +27,11 @@ color TEXT DEFAULT '#000000',
 icon TEXT 
 );
 
+INSERT INTO categories (name, color) VALUES
+('Läxor', '#FF5733'),
+('Träning', '#33FF57'),
+('Städning', '#3357FF');
+
 --  events
 DROP TABLE IF EXISTS events;
 CREATE TABLE events (
@@ -41,14 +46,6 @@ family_member_id INTEGER REFERENCES family_members(id),
 category_id INTEGER REFERENCES categories(id)  
 );
 
--- event_categories, Om en händelse kan ha flera kategorier, eller om man vill kunna tilldela flera kategorier till en händelse
-DROP TABLE IF EXISTS event_categories;
-CREATE TABLE event_categories (
-event_id INTEGER REFERENCES events(id),
-category_id INTEGER REFERENCES categories(id),
-PRIMARY KEY (event_id, category_id)
-);
-
 -- tasks, uppgifter som även kan vara kopplade till händelser
 DROP TABLE IF EXISTS tasks;
 CREATE TABLE tasks (
@@ -57,9 +54,10 @@ title TEXT NOT NULL,
 description TEXT,
 due_date DATE, 
 completed BOOLEAN DEFAULT FALSE, 
+recurring_weekday INTEGER,
 event_id INTEGER REFERENCES events(id), 
 user_id INTEGER REFERENCES users(id),
-recurring_weekday INTEGER
+category_id INTEGER REFERENCES categories(id)
 );
 
 -- kopllingstabell för att kunna koppla flera veckodagar till uppgift
@@ -70,8 +68,8 @@ CREATE TABLE task_weekdays (
   PRIMARY KEY (task_id, weekday)
 );
 
-
 -- kopplingstabell tasks_family_members (flera familjemedlemmar kan kopplas till en uppgift)
+--On Delete cascade = Om den refererade raden tas bort, så tas automatiskt alla kopplade rader i denna tabell bort.
 DROP TABLE IF EXISTS task_family_members;
 CREATE TABLE task_family_members (
   task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,
@@ -79,8 +77,7 @@ CREATE TABLE task_family_members (
   PRIMARY KEY (task_id, family_member_id)
 );
 
---On Delete cascade = Om den refererade raden tas bort, så tas automatiskt alla kopplade rader i denna tabell bort.
-
+-- kopplingstabell event_family_members (flera familjemedlemmar kan kopplas till ett event)
 DROP TABLE IF EXISTS event_family_members;
 CREATE TABLE event_family_members (
   event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,

@@ -31,11 +31,16 @@ app.use(express.json()); // middleware för att tolka JSON-body
 // Anslut till PostgreSQL-databas
 const client = new Client({
   connectionString: process.env.PGURI,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: { rejectUnauthorized: false },
+  client_encoding: 'UTF8'
 });
 client.connect();
+
+// Middleware för att alla JSON svar skickas med utf8 så åäö ska bli rätt
+app.use((_request, response, next) => {
+  response.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 // Middleware för att autentisera token
 async function authenticate(request: UserRequest, response: Response, next: NextFunction) {
@@ -876,6 +881,7 @@ app.delete('/api/week-tasks/:id', authenticate, async (request, response) => {
   }
 });
 
+
 // GET kategorier 
 app.get('/api/categories', async (_request, response) => {
   try {
@@ -883,13 +889,26 @@ app.get('/api/categories', async (_request, response) => {
     const result = await client.query(
       `SELECT id, name, color, icon FROM categories ORDER BY name`
     );
+    console.log('Kategorier från get categories:', result.rows);
 
-    response.json(result.rows);
+    function fixName(n: string): string {
+      return n
+        .replace('„', 'ä')
+        .replace('™', 'ö');
+    }
+
+    const fixedCategories = result.rows.map(row => ({
+      ...row,
+      name: fixName(row.name)
+    }));
+
+    response.json(fixedCategories);
   } catch (error) {
     console.error('Fel vid hämtning av kategorier:', error);
     response.status(500).json({ error: 'Kunde inte hämta kategorier' });
   }
 });
+
 
 
 // Servera frontend från dist-mappen

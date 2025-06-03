@@ -14,6 +14,7 @@ const GlobalStyles = createGlobalStyle`
     background-color:rgb(245, 245, 245);
     color: #333;
     min-height: 100vh;
+    font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;

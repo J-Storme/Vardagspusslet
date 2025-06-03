@@ -112,6 +112,7 @@ function WeeklySchedule() {
     // Hämta allt parallellt
     Promise.all([fetchTasks(), fetchFamilyMembers(), fetchCategories()])
       .then(([tasksData, familyMembersData, categoriesData]) => {
+        console.log('>>> categoriesData från backend:', categoriesData);
         console.log('tasksData från backend:', tasksData);
         if (Array.isArray(tasksData.recurringTasks)) {
           setTasks(tasksData.recurringTasks);
@@ -606,19 +607,18 @@ const DayColumn = styled.div`
 `;
 
 const DayTitle = styled.h4`
-  background-color: rgb(79, 120, 182);
+  background-color: rgb(117, 119, 212);
   color: white;
   border-radius: 3px;
   padding: 2px;
   text-align: center;
   margin-bottom: 0.5rem;
-  rgb(117, 119, 212);
 `;
 
 const RecurringTaskItem = styled.li<{ $completed: boolean; $categoryColor: string }>`
   border: 1px solid #ccc;
   padding: 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   border-radius: 8px;
   background-color: ${props => (props.$completed ? '#ddd' : props.$categoryColor)};
   color: ${props => (props.$completed ? '#666' : '#000')};

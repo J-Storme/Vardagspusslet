@@ -14,7 +14,7 @@ function Navbar() {
           <NavbarLink to="/">Hem</NavbarLink>
           <DropdownMenu>
             <DropdownItem>
-              <Link to="/tasks">Uppgifter</Link>
+              <Link to="/account">Konto</Link>
             </DropdownItem>
             {!isLoggedIn && (
               <DropdownItem>
@@ -120,7 +120,7 @@ const DropdownItem = styled.div`
   padding: 8px;
   color: white;
   text-align: center;
- border: solid black;
+  border: solid black;
   width: 100%;
   &:hover {
     background-color: rgb(187, 183, 183);

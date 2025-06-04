@@ -3,6 +3,9 @@ import styled from 'styled-components';
 
 // Globala stilar
 const GlobalStyles = createGlobalStyle`
+
+@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+
   * {
     margin: 0px;
     padding: 0px;
@@ -24,6 +27,7 @@ const GlobalStyles = createGlobalStyle`
   text-align: center;
   font-size: 26px;
   margin: 10px;
+  font-family: 'Indie Flower', Arial, sans-serif;
   }
 
   h2 {
@@ -49,7 +53,7 @@ export const AppContainer = styled.div`
   width: 100%;
   display: flex;
   flex-direction: column;
-    background-color: rgb(222, 217, 243);
+    background-color: rgb(139, 203, 255);
 `;
 
 export default GlobalStyles;

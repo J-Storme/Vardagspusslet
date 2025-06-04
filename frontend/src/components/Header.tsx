@@ -10,7 +10,7 @@ function Header() {
       <LogoContainer><h1>Vardagspusslet</h1>
         <img src="/logo.png" alt="logo" />
       </LogoContainer>
-      {isLoggedIn && <WelcomeText>Inloggad som hushåll {userName}!</WelcomeText>}
+      {isLoggedIn && <WelcomeText>Hushåll {userName}!</WelcomeText>}
     </HeaderContainer>
   );
 }
@@ -22,22 +22,35 @@ export const HeaderContainer = styled.header`
   max-width: 700px;
   text-align: center;
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 24px 0;  
+
+  h1 {font-size: 36px;
+  }
 `;
 
 export const LogoContainer = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+  align-items: center;  
+  gap: 2px;
   margin: 0;
-  padding: 24px 0px;
-  background-color: rgb(222, 217, 243);
+
+  h1 {font-size: 36px;
+  font-family: 'Indie Flower', Arial, sans-serif;
+  }
+  
   img {
     height: 60px;
   }
 `;
 
 const WelcomeText = styled.p`
-  font-size: 18px;
-  margin: 0;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  font-family: 'Indie Flower', Arial, sans-serif;
+  transform: translateY(-50%);  
 `;

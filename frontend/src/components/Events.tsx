@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { Event } from '../types';
 
 interface FamilyMember {
   id: number;
@@ -8,22 +9,16 @@ interface FamilyMember {
   profile_image: string;
 }
 
-type Event = {
-  id: number;
-  title: string;
-  description?: string;
-  event_date: string;
-  start_time: string;
-  end_time: string;
-  family_member_ids: number[];
-};
-
 type Props = {
   userId: number;
   token: string;
+  events: Event[];
+  setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
 };
 
-function Events({ userId, token }: Props) {
+
+//function Events({ userId, token }: Props) {
+function Events({ userId, token, events, setEvents }: Props) {
   // state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -33,9 +28,10 @@ function Events({ userId, token }: Props) {
   const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<number[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAddingEvent, setIsAddingEvent] = useState(false); // Lägg till event-form visas ej från början
-  const [events, setEvents] = useState<Event[]>([]);
+  //const [events, setEvents] = useState<Event[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
+  //const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Hämta events och familjemedlemmar när komponenten laddas
   useEffect(() => {
@@ -79,8 +75,23 @@ function Events({ userId, token }: Props) {
       const data = await res.json();
       console.log('Events från backend:', data);
 
+      /*if (Array.isArray(data)) {
+        setEvents(data);*/
       if (Array.isArray(data)) {
-        setEvents(data);
+
+        const mappedEvents = data.map((ev: any) => ({
+          id: ev.id,
+          title: ev.title,
+          description: ev.description,
+          event_date: ev.event_date,
+          start_time: ev.start_time,
+          end_time: ev.end_time,
+          family_member_ids: ev.family_member_ids,
+          user_id: ev.user_id
+        }));
+        setEvents(mappedEvents);
+
+
       } else {
         console.error('Fel format från backend. Förväntade en array, fick:', data);
         setEvents([]); // Fallback
@@ -260,12 +271,15 @@ function Events({ userId, token }: Props) {
                 new Date(event.event_date).toISOString().split('T')[0]}
               <br />
               { // Visa start- och sluttid utan sekunder genom att ta bort 5 första tecknena
-                event.start_time.slice(0, 5)} - {event.end_time.slice(0, 5)}
+                event.start_time && event.end_time
+                  ? `${event.start_time.slice(0, 5)} - ${event.end_time.slice(0, 5)}`
+                  : ''}
               <br />
               {// Lägger till description om det finns
                 event.description && <em>{event.description}</em>}
               <br />
-              {event.family_member_ids.length === 0 ? 'Ingen'
+              {!event.family_member_ids || event.family_member_ids.length === 0
+                ? 'Ingen'
                 : event.family_member_ids
                   .map(id => familyMembers.find(fm => fm.id === id)?.name)
                   .filter(Boolean) // Ta bort undefined om någon inte hittas
@@ -286,6 +300,7 @@ export default Events;
 // styling
 const EventsFormContainer = styled.div`
   max-width: 800px;
+  min-width: 350px;
   margin: 2rem auto;
   padding: 2rem;
   background-color: #f8f9fa;

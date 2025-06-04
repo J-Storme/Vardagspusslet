@@ -891,6 +891,7 @@ app.get('/api/categories', async (_request, response) => {
     );
     console.log('Kategorier från get categories:', result.rows);
 
+    // Fix för att dropdownmenyn visar åäö fel. 
     function fixName(n: string): string {
       return n
         .replace('„', 'ä')

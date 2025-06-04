@@ -664,6 +664,7 @@ const FamilyMembers = styled.div`
   justify-content: flex-end;
   margin-top: 0.5rem;
   color: #333;
+  Font-style: arial;
   font-size: 11px;
 `;
 

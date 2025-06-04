@@ -69,9 +69,8 @@ export default CalendarView;
 
 const CalendarContainer = styled.div`
   padding: 5px;  
-  margin: 0 auto;
+  margin: 0.6rem auto;
   max-width: 400px;
-  margin: 2rem auto;
   border-radius: 10px;
   overflow: hidden;  
 

@@ -300,7 +300,7 @@ export default Events;
 const EventsFormContainer = styled.div`
   max-width: 800px;
   min-width: 350px;
-  margin: 2rem auto;
+  margin: 0.5rem auto;
   padding: 2rem;  
   border-radius: 12px;  
   background: transparent;
@@ -308,7 +308,7 @@ const EventsFormContainer = styled.div`
 
 const Title = styled.h2`
   text-align: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   font-size: 28px;
   font-family: 'Indie Flower', Arial, sans-serif;
 `;

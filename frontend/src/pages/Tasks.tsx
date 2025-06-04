@@ -270,10 +270,18 @@ function Tasks() {
       <FormContainer>
         {!loading && !error && (
           <>
+            {!isAddingTask && (
+              <OpenFormButton onClick={() => setIsAddingTask(true)}>
+                Lägg till uppgift
+              </OpenFormButton>
+            )}
 
             {isAddingTask && (
               <Form>
                 <h3>Lägg till ny uppgift</h3>
+                <CancelButton type="button" onClick={() => setIsAddingTask(false)}>
+                  x
+                </CancelButton>
 
                 <label>
                   Titel: <br />
@@ -465,6 +473,8 @@ const FormContainer = styled.div`
   max-width: 700px;
   margin: 0 auto;
   padding: 1rem;
+  display: flex;
+  justify-content: center;
 `;
 
 const Form = styled.div`
@@ -477,12 +487,15 @@ const Form = styled.div`
   padding: 1em;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
-  background-color: rgb(232, 232, 235);
+  background-color: rgb(229, 229, 252);
 `;
 
 const Title = styled.h3`
   text-align: center;
   margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-family: 'Indie Flower', Arial, sans-serif;
+  font-size: 34px;
 `;
 
 const TaskList = styled.ul`
@@ -568,5 +581,38 @@ const SubmitButton = styled.button`
   
   &:hover {
     background-color:rgb(115, 221, 120);
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: rgb(117, 119, 212);
+  color: white;
+  font-weight: bold;
+  padding: 0.7rem 1rem;
+  margin-top: 0px;
+  margin-left: auto;
+  display: block;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color:rgb(115, 221, 120);
+  }
+`;
+
+const OpenFormButton = styled.button`
+  background-color: rgb(117, 119, 212);
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1.25rem;
+  margin: 1.5rem auto 0 auto;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: rgb(91, 201, 133);
   }
 `;

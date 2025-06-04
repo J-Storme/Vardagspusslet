@@ -302,7 +302,7 @@ function Tasks() {
                 </label>
                 <br />
 
-                <StyledFieldset>
+                { /*<StyledFieldset>
                   <legend>Lägg till i veckoschema:</legend>
                   {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => (
                     <label key={day} style={{ marginRight: '10px' }}>
@@ -325,7 +325,7 @@ function Tasks() {
                       {day.charAt(0).toUpperCase() + day.slice(1)}
                     </label>
                   ))}
-                </StyledFieldset>
+                </StyledFieldset> */}
 
                 {!newRecurring && (
                   <label>
@@ -520,6 +520,8 @@ const TaskTitle = styled.span<{ $completed: boolean }>`
   font-weight: bold;
   text-decoration: ${props => (props.$completed ? 'line-through' : 'none')};
   margin-left: 0.5rem;
+  font-family: 'Indie Flower', Arial, sans-serif;
+  font-size: 18px;
 `;
 
 const DueDate = styled.div`

@@ -628,38 +628,57 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
     // Hämta återkommande uppgifter med veckodag som array
     const recurringTasksResult = await client.query(
       `
-      SELECT
-        t.id,
-        t.title,
-        t.description,
-        t.due_date,
-        t.completed,
-        t.event_id,
-        t.user_id,
-        t.category_id,
-
-        -- Aggregera återkommande veckodagar till en array
-        COALESCE(
-          array_agg(tw.weekday) FILTER (WHERE tw.weekday IS NOT NULL),
-          '{}'
-        ) AS recurring_weekdays,
-
-        -- Hämta kategoriinfo från categories‐tabellen
-        c.name  AS category_name,
-        c.color AS category_color,
-        c.icon  AS category_icon
-
-      FROM tasks t
-      LEFT JOIN task_weekdays tw ON tw.task_id = t.id
-      LEFT JOIN categories c       ON t.category_id = c.id
-      WHERE t.user_id = $1
-      GROUP BY 
-        t.id,
-        c.name,
-        c.color,
-        c.icon
-      ORDER BY t.title
-      `,
+  WITH task_weekdays_agg AS (
+    SELECT
+      t.id,
+      t.title,
+      t.description,
+      t.due_date,
+      t.completed,
+      t.event_id,
+      t.user_id,
+      t.category_id,
+      COALESCE(array_agg(DISTINCT tw.weekday) FILTER (WHERE tw.weekday IS NOT NULL), '{}') AS recurring_weekdays
+    FROM tasks t
+    LEFT JOIN task_weekdays tw ON tw.task_id = t.id
+    WHERE t.user_id = $1
+    GROUP BY t.id, t.title, t.description, t.due_date, t.completed, t.event_id, t.user_id, t.category_id
+  ),
+  family_members_agg AS (
+    SELECT
+      tfm.task_id,
+      COALESCE(
+        json_agg(
+          DISTINCT jsonb_build_object(
+            'id', fm.id,
+            'name', fm.name
+          )
+        ) FILTER (WHERE fm.id IS NOT NULL),
+        '[]'
+      ) AS family_members
+    FROM task_family_members tfm
+    LEFT JOIN family_members fm ON fm.id = tfm.family_member_id
+    GROUP BY tfm.task_id
+  )
+  SELECT
+    twa.id,
+    twa.title,
+    twa.description,
+    twa.due_date,
+    twa.completed,
+    twa.event_id,
+    twa.user_id,
+    twa.category_id,
+    twa.recurring_weekdays,
+    c.name AS category_name,
+    c.color AS category_color,
+    c.icon AS category_icon,
+    COALESCE(fma.family_members, '[]') AS family_members
+  FROM task_weekdays_agg twa
+  LEFT JOIN categories c ON c.id = twa.category_id
+  LEFT JOIN family_members_agg fma ON fma.task_id = twa.id
+  ORDER BY twa.title
+  `,
       [userId]
     );
 
@@ -694,12 +713,11 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
       }
     }
 
-    // Lägg till uppgiften i tabell task
+    // Lägg till raden i tasks
     const insertTaskResult = await client.query(
       `INSERT INTO tasks (title, description, user_id, category_id) VALUES ($1, $2, $3, $4) RETURNING *`,
       [title, description, userId, category_id]
     );
-
     const newTask = insertTaskResult.rows[0];
 
     // Lägg till kopplingar i task_family_members
@@ -712,7 +730,7 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
       }
     }
 
-    // Lägg till kopplingar i task_weekdays, ta bort nullvärden
+    // Lägg till kopplingar i task_weekdays (för recurring)
     if (Array.isArray(recurring_weekdays) && recurring_weekdays.length > 0) {
       const filteredWeekdays = recurring_weekdays.filter(day => day !== null && day !== undefined);
       for (const weekday of filteredWeekdays) {
@@ -723,20 +741,21 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
       }
     }
 
-    // Hämta kopplingar
+    // Hämta tillbaka sparade family_member_ids ur task_family_members
     const familyMembersResult = await client.query(
       `SELECT family_member_id FROM task_family_members WHERE task_id = $1`,
       [newTask.id]
     );
     const family_member_ids_from_db = familyMembersResult.rows.map(row => row.family_member_id);
 
+    // Hämta tillbaka sparade recurring_weekdays ur task_weekdays
     const recurringWeekdaysResult = await client.query(
       `SELECT weekday FROM task_weekdays WHERE task_id = $1`,
       [newTask.id]
     );
     const recurring_weekdays_from_db = recurringWeekdaysResult.rows.map(row => row.weekday);
 
-    // Hämta kopplingar till categories
+    // Hämta kategoriinfo
     const categoryInfoResult = await client.query(
       `
       SELECT
@@ -750,14 +769,34 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
     );
     const categoryRow = categoryInfoResult.rows[0] || { category_name: null, category_color: null, category_icon: null };
 
-    // Bygg ett objektet som kan skickas som svar
+    // Hämta family_members-array
+    let fullFamilyMembers: { id: number; name: string; role: string; profile_image: string }[] = [];
+    if (family_member_ids_from_db.length > 0) {
+      const fullMembersResult = await client.query(
+        `
+        SELECT
+          fm.id,
+          fm.name,
+          fm.role,
+          fm.profile_image
+        FROM task_family_members tfm
+        JOIN family_members fm ON fm.id = tfm.family_member_id
+        WHERE tfm.task_id = $1
+        `,
+        [newTask.id]
+      );
+      fullFamilyMembers = fullMembersResult.rows;
+    }
+
+    // Bygg och skicka tillbaka uppgiften med alla fält
     const completeTask = {
       ...newTask,
       family_member_ids: family_member_ids_from_db,
       recurring_weekdays: recurring_weekdays_from_db,
       category_name: categoryRow.category_name,
       category_color: categoryRow.category_color,
-      category_icon: categoryRow.category_icon
+      category_icon: categoryRow.category_icon,
+      family_members: fullFamilyMembers
     };
 
     console.log('recurring_weekdays:', recurring_weekdays);
@@ -765,7 +804,6 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
     console.log('completeTask', completeTask);
 
     response.status(201).json(completeTask);
-
 
   } catch (error) {
     console.error('Fel vid skapande av veckouppgift:', error);

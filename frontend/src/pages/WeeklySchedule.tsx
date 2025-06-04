@@ -15,6 +15,7 @@ interface Task {
   category_name?: string;
   category_color?: string;
   category_icon?: string;
+  family_members?: FamilyMember[];
 }
 
 interface FamilyMember {
@@ -42,7 +43,7 @@ function WeeklySchedule() {
   const [isAddingTask, setIsAddingTask] = useState(false); // Lägg till så att lägga-till-formuläret visas ej från början
 
 
-  // State för nya uppgifter (inputfält)
+  // State för nya uppgifter från formulär
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newSelectedFamilyMemberIds, setNewSelectedFamilyMemberIds] = useState<number[]>([]);
@@ -59,6 +60,47 @@ function WeeklySchedule() {
     söndag: 7,
   };
 
+  const token = localStorage.getItem('token');
+
+
+  // Hämta tasks
+  function fetchTasks() {
+    return fetch('http://localhost:8080/api/week-tasks', {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(response => {
+      console.log('fetchTasks status:', response.status);
+      if (!response.ok) {
+        throw new Error('Något gick fel vid hämtning av uppgifter');
+      }
+      return response.json();
+    });
+  }
+
+  // Hämta familjemedlemmar
+  function fetchFamilyMembers() {
+    return fetch('http://localhost:8080/api/family-members', {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(response => {
+      console.log('fetchFamilyMembers status:', response.status);
+      if (!response.ok) {
+        throw new Error('Något gick fel vid hämtning av familjemedlemmar');
+      }
+      return response.json();
+    });
+  }
+
+  // Hämta kategorier
+  function fetchCategories() {
+    return fetch('http://localhost:8080/api/categories', {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(response => {
+      console.log('fetchCategories status:', response.status);
+      if (!response.ok) {
+        throw new Error('Kunde inte hämta kategorier');
+      }
+      return response.json();
+    });
+  }
 
   // Hämta data när komponenten laddas
   useEffect(() => {
@@ -70,49 +112,10 @@ function WeeklySchedule() {
       return;
     }
 
-    // Hämta tasks
-    function fetchTasks() {
-      return fetch('http://localhost:8080/api/week-tasks', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(response => {
-        console.log('fetchTasks status:', response.status);
-        if (!response.ok) {
-          throw new Error('Något gick fel vid hämtning av uppgifter');
-        }
-        return response.json();
-      });
-    }
-
-    // Hämta familjemedlemmar
-    function fetchFamilyMembers() {
-      return fetch('http://localhost:8080/api/family-members', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(response => {
-        console.log('fetchFamilyMembers status:', response.status);
-        if (!response.ok) {
-          throw new Error('Något gick fel vid hämtning av familjemedlemmar');
-        }
-        return response.json();
-      });
-    }
-
-    // Hämta kategorier
-    function fetchCategories() {
-      return fetch('http://localhost:8080/api/categories', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(response => {
-        console.log('fetchCategories status:', response.status);
-        if (!response.ok) {
-          throw new Error('Kunde inte hämta kategorier');
-        }
-        return response.json();
-      });
-    }
-
     // Hämta allt parallellt
     Promise.all([fetchTasks(), fetchFamilyMembers(), fetchCategories()])
       .then(([tasksData, familyMembersData, categoriesData]) => {
-        console.log('>>> categoriesData från backend:', categoriesData);
+        console.log('categoriesData från backend:', categoriesData);
         console.log('tasksData från backend:', tasksData);
         if (Array.isArray(tasksData.recurringTasks)) {
           setTasks(tasksData.recurringTasks);
@@ -128,7 +131,10 @@ function WeeklySchedule() {
         setError('Kunde inte hämta data från servern');
         setLoading(false);
       });
-  }, []);
+  }, [token]);
+
+
+
 
 
   // POST Lägg till ny uppgift
@@ -238,7 +244,8 @@ function WeeklySchedule() {
 
     // Kontrollera familjemedlemsfilter
     const matchesFamilyMember = selectedFamilyMemberIdForFilter === 'all' ||
-      task.family_member_ids.includes(selectedFamilyMemberIdForFilter as number);
+      (Array.isArray(task.family_members) && task.family_members.some(member => member.id === selectedFamilyMemberIdForFilter));
+
 
     // Kontrollera kategori-filter
     const matchesCategory = selectedCategoryForFilter === 'all'
@@ -268,11 +275,9 @@ function WeeklySchedule() {
 
 
 
-  function getFamilyMemberNames(ids: number[]): string {
-    const names = familyMembers
-      .filter(member => ids.includes(member.id))
-      .map(member => member.name);
-    // Slå ihop namnen till en sträng
+  function getFamilyMemberNamesFromObjects(familyMembersObjects: { id: number; name: string }[]): string {
+    if (!Array.isArray(familyMembersObjects)) return '';
+    const names = familyMembersObjects.map(member => member.name);
     return names.join(', ');
   }
 
@@ -511,9 +516,9 @@ function WeeklySchedule() {
                           <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
                           {task.description && <Description>{task.description}</Description>}
 
-                          {task.family_member_ids && task.family_member_ids.length > 0 && (
+                          {task.family_members && task.family_members.length > 0 && (
                             <FamilyMembers>
-                              {getFamilyMemberNames(task.family_member_ids)}
+                              {getFamilyMemberNamesFromObjects(task.family_members)}
                             </FamilyMembers>
                           )}
 
@@ -637,7 +642,8 @@ const TaskTitle = styled.span<{ $completed: boolean }>`
   display: flex; 
   justify-content: flex-end;
   font-weight: bold;
-  font-size: 14px;  
+  font-size: 14px;    
+  font-family: 'Indie Flower', Arial, sans-serif;
   text-decoration: ${props => (props.$completed ? 'line-through' : 'none')};
   margin-left: 0.4rem;
 `;

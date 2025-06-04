@@ -71,23 +71,99 @@ const CalendarContainer = styled.div`
   padding: 20px;
   max-width: 400px;
   margin: 0 auto;
+   max-width: 400px;
+  margin: 2rem auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(117, 119, 212, 0.7);
+
+  /* Bakgrund och text */
+  .react-calendar {
+    background: #5e4b8b;   /* Mörk lila */
+    color: #ddd;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border: none;
+  }
+
+  /* Navigation */
+  .react-calendar__navigation {
+    background: #3a2e66;
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .react-calendar__navigation button {
+    color: #d8caff;
+    min-width: 44px;
+    background: transparent;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s;
+  }
+
+  .react-calendar__navigation button:hover {
+    background: #7c66cc;
+  }
+
+  /* Veckodagar (Mån, Tis, Ons ...) */
+  .react-calendar__month-view__weekdays {
+    background: #453d72;
+    color: #c5b8ff;
+    text-transform: uppercase;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+
+  /* Dagar */
+  .react-calendar__tile {
+    background: #6e5ab5;
+    color: white;
+    border-radius: 8px;
+    margin: 3px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .react-calendar__tile:hover {
+    background: #9d87ff;
+    color: #2e1a6f;
+  }
+
+  /* Vald dag */
+  .react-calendar__tile--active {
+    background: #b799ff;
+    color: #2e1a6f;
+    font-weight: bold;
+    box-shadow: 0 0 8px #b799ff;
+  }
+
+  /* Dagar utanför aktuell månad */
+  .react-calendar__tile--neighboringMonth {
+    color: #a49acb;
+  }
 `;
 
 const DailyEventList = styled.div`
-  max-width: 350px;
-  margin: 0.5rem auto;
-  padding: 1rem;
-  background:rgb(117, 119, 212);
-  color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
+max - width: 350px;
+margin: 0.5rem auto;
+padding: 1rem;
+background: rgb(117, 119, 212);
+color: #fff;
+border - radius: 8px;
+box - shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
 `;
 
 const EventItem = styled.div`
-  margin-bottom: 1rem; 
-  margin-top: 1rem;  
-  color: #fff;
-  font-family: 'Indie Flower', cursive;   
+margin - bottom: 1rem;
+margin - top: 1rem;
+color: #fff;
+font - family: 'Indie Flower', cursive;
 `;
 
 
@@ -111,11 +187,11 @@ export default CalendarView;
 
 //Styling
 const CalendarContainer = styled.div`
-  padding: 20px;
-  max-width: 400px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+padding: 20px;
+max - width: 400px;
+margin: 0 auto;
+display: flex;
+flex - direction: column;
+gap: 10px;
 `;
 */

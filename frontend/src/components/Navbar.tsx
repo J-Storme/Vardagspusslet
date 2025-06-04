@@ -12,15 +12,22 @@ function Navbar() {
 
         <NavbarItemWithDropdown>
           <NavbarLink to="/">Hem</NavbarLink>
+
           <DropdownMenu>
+            <DropdownItem>
+              <Link to="/">Aktiviteter</Link>
+            </DropdownItem>
+
             <DropdownItem>
               <Link to="/account">Konto</Link>
             </DropdownItem>
+
             {!isLoggedIn && (
               <DropdownItem>
                 <Link to="/login">Logga in</Link>
               </DropdownItem>
             )}
+
             {isLoggedIn && (
               <DropdownItem onClick={(event) => {
                 event.preventDefault();
@@ -29,6 +36,7 @@ function Navbar() {
                 <Link to="/">Logga ut</Link>
               </DropdownItem>
             )}
+
           </DropdownMenu>
         </NavbarItemWithDropdown>
 
@@ -106,7 +114,7 @@ const NavbarLink = styled(Link)`
 const DropdownMenu = styled.div`
   position: absolute;
   top: 100%;
-  left: 0;
+  left: 0;  
   background-color: rgb(235, 206, 235);
   width: 95px;
   border-radius: 8px;

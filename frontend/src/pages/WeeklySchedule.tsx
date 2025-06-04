@@ -558,9 +558,29 @@ const Container = styled.div`
 `;
 
 const Filter = styled.div`
-text-align: center;
+  display: flex;
+  justify-content: flex-end;  
+  gap: 1rem;
+  text-align: flex-end;
   margin-top: 20px;  
-  padding: 0px;
+  padding: 1px;
+  gap: 1rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;           
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+  }
+
+  select {
+  background-color: rgb(235, 206, 235);
+  width: 195px;
+  border-radius: 8px;
+  border: rgb(148, 130, 148);
+  box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.2);
+  }
   `;
 
 const FormContainer = styled.div`
@@ -585,6 +605,7 @@ const Form = styled.div`
 const Title = styled.h3`
   text-align: center;  
   font-size: 28px;
+  font-family: 'Montserrat', Arial, sans-serif;
 `;
 
 const WeeklyScheduleContainer = styled.div`

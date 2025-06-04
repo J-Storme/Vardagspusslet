@@ -33,6 +33,7 @@ const GlobalStyles = createGlobalStyle`
   h2 {
   text-align: center;
   font-size: 20px;
+  font-family: 'Montserrat', Arial, sans-serif;
   }
 
   p {

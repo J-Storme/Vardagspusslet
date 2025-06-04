@@ -26,6 +26,7 @@ app.use(cors({
   origin: 'http://localhost:5173', /*+ länk till render-url */
   credentials: true
 }));
+
 app.use(express.json()); // middleware för att tolka JSON-body
 
 // Anslut till PostgreSQL-databas
@@ -35,12 +36,6 @@ const client = new Client({
   client_encoding: 'UTF8'
 });
 client.connect();
-
-// Middleware för att alla JSON svar skickas med utf8 så åäö ska bli rätt
-app.use((_request, response, next) => {
-  response.setHeader('Content-Type', 'application/json; charset=utf-8');
-  next();
-});
 
 // Middleware för att autentisera token
 async function authenticate(request: UserRequest, response: Response, next: NextFunction) {

@@ -175,7 +175,7 @@ function Events({ userId, token, events, setEvents }: Props) {
 
   return (
     <EventsFormContainer>
-      <Title>Mina Events</Title>
+      <Title>Aktiviteter</Title>
       <FormContainer>
         {!isAddingEvent && (
           <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingEvent(true)}>

@@ -1,4 +1,4 @@
--- users
+-- users (hushåll)
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
 id SERIAL PRIMARY KEY,
@@ -18,7 +18,7 @@ role TEXT NOT NULL,
 profile_image TEXT   
 );
 
--- categories
+-- categories (till veckoschemat)
 DROP TABLE IF EXISTS categories; 
 CREATE TABLE categories (
 id SERIAL PRIMARY KEY,
@@ -36,7 +36,7 @@ INSERT INTO categories (name, color) VALUES
 ('Skola', 'rgb(189, 178, 255)'),
 ('Övrigt', 'rgb(202, 255, 191)');
 
---  events
+--  events (aktiviteter)
 DROP TABLE IF EXISTS events;
 CREATE TABLE events (
 id SERIAL PRIMARY KEY,
@@ -50,7 +50,7 @@ family_member_id INTEGER REFERENCES family_members(id),
 category_id INTEGER REFERENCES categories(id)  
 );
 
--- tasks, uppgifter som även kan vara kopplade till händelser
+-- tasks, to-do-uppgifter som även kan vara kopplade till händelser
 DROP TABLE IF EXISTS tasks;
 CREATE TABLE tasks (
 id SERIAL PRIMARY KEY,

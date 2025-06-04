@@ -263,6 +263,8 @@ function Tasks() {
       {loading && <p>Laddar...</p>}
       {error && <p >{error}</p>}
 
+      <Title>To-do</Title>
+
       <FormContainer>
         {!loading && !error && (
           <>
@@ -374,7 +376,6 @@ function Tasks() {
       </FormContainer>
 
       <Filter>
-        <Title>To-do</Title>
         <div>
           <label>Filtrera på familjemedlem: </label>
           <select
@@ -461,10 +462,30 @@ const Container = styled.div`
 `;
 
 const Filter = styled.div`
-text-align: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  padding: 0px;
+  display: flex;
+  justify-content: flex-end;  
+  gap: 1rem;
+  text-align: flex-end;
+  margin-top: 20px;  
+  margin-bottom: 10px;
+  padding: 1px;
+  gap: 1rem;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;           
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+  }
+
+  select {
+  background-color: rgb(235, 206, 235);
+  width: 195px;
+  border-radius: 8px;
+  border: rgb(148, 130, 148);
+  box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.2);
+  }
   `;
 
 const FormContainer = styled.div`
@@ -491,7 +512,7 @@ const Form = styled.div`
 const Title = styled.h3`
   text-align: center;
   margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.1rem;
   font-family: 'Indie Flower', Arial, sans-serif;
   font-size: 34px;
 `;
@@ -573,7 +594,7 @@ const SubmitButton = styled.button`
   color: white;
   font-weight: bold;
   padding: 0.75rem 1.25rem;
-  margin-top: 10px;
+  margin-top: 0px;
   margin-left: auto;
   display: block;
   border: none;

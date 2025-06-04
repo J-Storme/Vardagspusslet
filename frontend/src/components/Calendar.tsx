@@ -146,7 +146,7 @@ const CalendarContainer = styled.div`
 
   /* Vald dag */
   .react-calendar__tile--active {
-    background: #b799ff;
+    background:rgb(229, 173, 255) !important;
     color: #2e1a6f;
     font-weight: bold;
     box-shadow: 0 0 8px #b799ff;

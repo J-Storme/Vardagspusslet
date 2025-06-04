@@ -10,7 +10,7 @@ interface Task {
   event_id: number | null;
   family_member_ids: number[];
   recurring: boolean;
-  recurring_weekday?: string[];
+  recurring_weekdays?: number[];
 }
 
 interface FamilyMember {
@@ -138,7 +138,7 @@ function Tasks() {
       family_member_ids: newSelectedFamilyMemberIds,
       event_id: newSelectedEventId,
       recurring: newRecurring,
-      recurring_weekdays: newRecurring ? newRecurringWeekday : []
+      //recurring_weekdays: newRecurring ? newRecurringWeekday : []
     };
 
     console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
@@ -405,7 +405,9 @@ function Tasks() {
       { /* Visnings-lista av uppgifter/ tasks */}
       <TaskList>
         {filteredTasks
-          .filter(task => !Array.isArray(task.recurring_weekday) || task.recurring_weekday.length === 0)
+          .filter(task => !Array.isArray(task.recurring_weekdays) || task.recurring_weekdays.length === 0)
+          // Sortera så att högst id (nyast) kommer först
+          .sort((a, b) => b.id - a.id)
           .map(task => (
             <TaskItem key={task.id} $completed={task.completed}>
               <input
@@ -447,7 +449,9 @@ function Tasks() {
               <DeleteButton onClick={() => deleteTask(task.id)}>Radera</DeleteButton>
             </TaskItem>
           ))}
-        {filteredTasks.length === 0 && <p>Inga uppgifter att visa.</p>}
+        {filteredTasks.filter(task => !Array.isArray(task.recurring_weekdays) || task.recurring_weekdays.length === 0).length === 0 && (
+          <p>Inga uppgifter att visa.</p>
+        )}
       </TaskList>
     </Container >
   );
@@ -531,7 +535,7 @@ const DueDate = styled.div`
 
 const Description = styled.div`
   margin-top: 0.25rem;
-  font-style: italic;
+  font-family: Arial, sans-serif;
 `;
 
 const EventList = styled.div`
@@ -543,6 +547,7 @@ const FamilyMembers = styled.div`
   display: flex; 
   justify-content: flex-end;
   margin-top: 0.5rem;
+  font-size: 13px;
   color: #333;
 `;
 

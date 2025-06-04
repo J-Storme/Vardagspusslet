@@ -4,13 +4,13 @@ import styled from 'styled-components';
 // Globala stilar
 const GlobalStyles = createGlobalStyle`
 
-@import url('https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap');
+
 
   * {
     margin: 0px;
     padding: 0px;
     box-sizing: border-box; 
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', Arial, sans-serif;
       }
 
   body {
@@ -37,7 +37,8 @@ const GlobalStyles = createGlobalStyle`
 
   p {
   margin: 5px 12px; 
-   text-align: center;
+  text-align: center;
+  font-family: 'Montserrat', Arial, sans-serif;
   }
 
   a {

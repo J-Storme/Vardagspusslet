@@ -243,9 +243,6 @@ function Tasks() {
       });
   }
 
-
-
-
   // Filtrera tasks baserat på vald användare
   let filteredTasks;
 
@@ -257,10 +254,9 @@ function Tasks() {
     });
   }
 
-
-
   if (loading) return <p>Laddar uppgifter...</p>;
   if (error) return <p>{error}</p>;
+
 
   return (
     <Container>
@@ -279,9 +275,7 @@ function Tasks() {
             {isAddingTask && (
               <Form>
                 <h3>Lägg till ny uppgift</h3>
-                <CancelButton type="button" onClick={() => setIsAddingTask(false)}>
-                  x
-                </CancelButton>
+                <CancelButton type="button" onClick={() => setIsAddingTask(false)}>x</CancelButton>
 
                 <label>
                   Titel: <br />
@@ -380,7 +374,7 @@ function Tasks() {
       </FormContainer>
 
       <Filter>
-        <Title>Uppgifter</Title>
+        <Title>To-do</Title>
         <div>
           <label>Filtrera på familjemedlem: </label>
           <select

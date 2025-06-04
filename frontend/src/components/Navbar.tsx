@@ -107,11 +107,12 @@ const DropdownMenu = styled.div`
   position: absolute;
   top: 100%;
   left: 0;
-  background-color: rgb(223, 217, 223);
+  background-color: rgb(235, 206, 235);
   width: 95px;
-  border-radius: 3px;
+  border-radius: 8px;
+  border: rgb(148, 130, 148);
   box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.2);
-  display: none;  /* Dölj menyn som standard */
+  display: none;  
   flex-direction: column;
   padding: 0;
 `;
@@ -119,11 +120,13 @@ const DropdownMenu = styled.div`
 const DropdownItem = styled.div`
   padding: 8px;
   color: white;
-  text-align: center;
-  border: solid black;
+  text-align: center;  
   width: 100%;
+  border: rgb(148, 130, 148);
   &:hover {
     background-color: rgb(187, 183, 183);
+    border-radius: 8px;
+    border: rgb(148, 130, 148);
   }
   a {
     color: black;

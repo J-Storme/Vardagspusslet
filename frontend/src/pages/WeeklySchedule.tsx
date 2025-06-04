@@ -338,6 +338,7 @@ function WeeklySchedule() {
             {isAddingTask && (
               <Form>
                 <h3>Lägg till ny uppgift</h3>
+                <CancelButton type="button" onClick={() => setIsAddingTask(false)}>x</CancelButton>
 
                 <label>
                   Titel: <br />
@@ -640,12 +641,14 @@ const BoxContainers = styled.div`
 
 const TaskTitle = styled.span<{ $completed: boolean }>`
   display: flex; 
-  justify-content: flex-end;
+  justify-content: flex-start;
+  word-break: break-word;     
+  white-space: normal; 
   font-weight: bold;
   font-size: 14px;    
   font-family: 'Indie Flower', Arial, sans-serif;
   text-decoration: ${props => (props.$completed ? 'line-through' : 'none')};
-  margin-left: 0.4rem;
+  margin-top: 0.4rem;
 `;
 
 const CheckboxStyled = styled.div`
@@ -703,6 +706,23 @@ const SubmitButton = styled.button`
   font-weight: bold;
   padding: 0.75rem 1.25rem;
   margin-top: 10px;
+  margin-left: auto;
+  display: block;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color:rgb(115, 221, 120);
+  }
+`;
+
+const CancelButton = styled.button`
+  background-color: rgb(117, 119, 212);
+  color: white;
+  font-weight: bold;
+  padding: 0.7rem 1rem;
+  margin-top: 0px;
   margin-left: auto;
   display: block;
   border: none;

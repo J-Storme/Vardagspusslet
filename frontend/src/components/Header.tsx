@@ -38,7 +38,8 @@ export const LogoContainer = styled.div`
   gap: 2px;
   margin: 0;
 
-  h1 {font-size: 36px;
+  h1 {
+  font-size: 36px;
   font-family: 'Indie Flower', Arial, sans-serif;
   }
   

@@ -52,8 +52,8 @@ function Register() {
 
   return (
     <>
-      <h2>Registrera ett konto för hushållet</h2>
       <RegisterContainer>
+        <h2>Registrera ett konto för hushållet</h2>
         <LabelRow>
           <label htmlFor="name">Hushållets namn:</label>
           <input
@@ -100,6 +100,10 @@ const RegisterContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
+
+  h2 {
+  margin-top: 30px;
+  }
 `;
 
 const LabelRow = styled.div`

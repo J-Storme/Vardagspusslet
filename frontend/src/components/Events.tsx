@@ -258,7 +258,6 @@ function Events({ userId, token, events, setEvents }: Props) {
       </FormContainer>
 
 
-      <Subtitle>Eventlista</Subtitle>
       {Array.isArray(events) && events.length > 0 ? (
         <EventList>
           {events.map(event => (
@@ -302,19 +301,16 @@ const EventsFormContainer = styled.div`
   max-width: 800px;
   min-width: 350px;
   margin: 2rem auto;
-  padding: 2rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 2rem;  
+  border-radius: 12px;  
+  background: transparent;
 `;
 
 const Title = styled.h2`
   text-align: center;
-  margin-bottom: 2rem;
-`;
-
-const Subtitle = styled.h3`
-  margin-top: 3rem;
+  margin-bottom: 1rem;
+  font-size: 28px;
+  font-family: 'Indie Flower', Arial, sans-serif;
 `;
 
 const FormContainer = styled.div`
@@ -371,7 +367,7 @@ const SubmitButton = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color: rgb(115, 221, 120);
+    background-color: rgb(91, 201, 133);
   }
 `;
 
@@ -400,7 +396,12 @@ margin: 1em 0;
 padding: 1em;
 border-radius: 8px;
 box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
-background-color: rgb(232, 232, 235);
+background: linear-gradient(
+  135deg,
+  rgb(241, 232, 248), 
+  rgb(243, 238, 247), 
+  rgb(230, 226, 238)   
+);
 `;
 
 const DeleteButton = styled.button`

@@ -500,7 +500,7 @@ const TaskItem = styled.li<{ $completed: boolean }>`
   color:  ${props => (props.$completed ? 'rgb(134, 134, 134)' : 'rgb(0, 0, 0)')};
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
-  background-color: ${props => (props.$completed ? 'rgb(209, 209, 209)' : ' #f9f9f9')};
+  background-color: ${props => (props.$completed ? 'rgb(209, 209, 209)' : 'rgb(227, 228, 250)')};
 `;
 
 const TaskTitle = styled.span<{ $completed: boolean }>`

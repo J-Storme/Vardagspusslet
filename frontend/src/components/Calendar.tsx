@@ -68,28 +68,28 @@ function CalendarView({ events, familyMembers }: Props) {
 export default CalendarView;
 
 const CalendarContainer = styled.div`
-  padding: 20px;
-  max-width: 400px;
+  padding: 5px;  
   margin: 0 auto;
-   max-width: 400px;
+  max-width: 400px;
   margin: 2rem auto;
   border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 0 10px rgba(117, 119, 212, 0.7);
+  overflow: hidden;  
 
   /* Bakgrund och text */
   .react-calendar {
-    background: #5e4b8b;   /* Mörk lila */
+    background:rgb(117, 119, 212);
     color: #ddd;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(55, 55, 59, 0.7);
   }
 
   /* Navigation */
   .react-calendar__navigation {
-    background: #3a2e66;
+    background: rgb(60, 43, 138);
     display: flex;
     justify-content: center;
+     border-radius: 10px;
     gap: 1rem;
   }
 
@@ -108,26 +108,36 @@ const CalendarContainer = styled.div`
     background: #7c66cc;
   }
 
-  /* Veckodagar (Mån, Tis, Ons ...) */
+  /* Veckodagar */
   .react-calendar__month-view__weekdays {
-    background: #453d72;
+    background:rgb(80, 63, 158);
     color: #c5b8ff;
     text-transform: uppercase;
     font-weight: 600;
     font-size: 0.85rem;
+    font-family: 'Indie Flower', cursive;
   }
 
-  /* Dagar */
+  /* Grid för dagrutor */
+.react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr); 
+  gap: 4px; 
+}
+
+  /* Dag-rutor */
   .react-calendar__tile {
-    background: #6e5ab5;
+    background: rgb(98, 80, 177);
     color: white;
     border-radius: 8px;
-    margin: 3px;
-    height: 50px;
-    display: flex;
+    width: 100%;             
+    aspect-ratio: 1 / 1;     
+    height: 50px;    
+    display: flex;    
     justify-content: center;
     align-items: center;
-    transition: background 0.3s, color 0.3s;
+    transition: background 0.3s, color 0.3s;                   
+    box-sizing: border-box;
   }
 
   .react-calendar__tile:hover {
@@ -145,7 +155,7 @@ const CalendarContainer = styled.div`
 
   /* Dagar utanför aktuell månad */
   .react-calendar__tile--neighboringMonth {
-    color: #a49acb;
+  color:rgb(193, 184, 230);
   }
 `;
 
@@ -155,43 +165,16 @@ margin: 0.5rem auto;
 padding: 1rem;
 background: rgb(117, 119, 212);
 color: #fff;
-border - radius: 8px;
-box - shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
+border-radius: 8px;
+box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
+
+h3 {
+font-family: 'Indie Flower', cursive;}
 `;
 
 const EventItem = styled.div`
-margin - bottom: 1rem;
-margin - top: 1rem;
+margin-bottom: 1rem;
+margin-top: 1rem;
 color: #fff;
-font - family: 'Indie Flower', cursive;
+font-family: 'Indie Flower', cursive;
 `;
-
-
-/*function CalendarView() {
-  const [date, setDate] = useState<Date | null>(new Date());
-
-
-
-  return (
-    <div>
-      <CalendarContainer>
-        <Calendar value={date} onChange={(value) => {
-          if (value instanceof Date) setDate(value);
-        }} />
-      </CalendarContainer>
-    </div>
-  );
-}
-
-export default CalendarView;
-
-//Styling
-const CalendarContainer = styled.div`
-padding: 20px;
-max - width: 400px;
-margin: 0 auto;
-display: flex;
-flex - direction: column;
-gap: 10px;
-`;
-*/

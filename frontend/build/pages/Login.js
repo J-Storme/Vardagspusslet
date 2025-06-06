@@ -38,7 +38,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +68,7 @@ function Login() {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, fetch('http://localhost:8080/login', {
+                    return [4 /*yield*/, fetch('http://localhost:8080/api/login', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ email: email, password: password }),
@@ -86,7 +86,10 @@ function Login() {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('userEmail', data.email);
                     localStorage.setItem('userName', data.name || '');
-                    login(data.token, data.email, data.name);
+                    localStorage.setItem('userId', data.id.toString());
+                    // Logg ain och skicka vidare till sidan Home
+                    login(data.token, data.email, data.name, data.id);
+                    navigate('/');
                     return [3 /*break*/, 5];
                 case 4:
                     error_1 = _a.sent();
@@ -144,7 +147,7 @@ function Login() {
         });
     }); };
     var token = localStorage.getItem('token');
-    return (_jsxs(LoginContainer, { children: [_jsx("h2", { children: "Logga in" }), _jsx("input", { type: "email", placeholder: "E-post", value: email, onChange: function (event) { return setEmail(event.target.value); } }), _jsx("input", { type: "password", placeholder: "L\u00F6senord", value: password, onChange: function (event) { return setPassword(event.target.value); } }), error && _jsx("p", { children: error }), _jsx("button", { onClick: handleLogin, children: "Logga in" }), _jsxs("div", { children: [_jsx("p", { children: "Har du inget konto?" }), _jsx("button", { onClick: handleRegisterRedirect, children: "Registrera dig" })] }), token && (_jsxs(_Fragment, { children: [_jsx("h3", { children: "Din profil" }), _jsx("label", { children: "Namn:" }), _jsx("input", { type: "text", value: editName, onChange: function (event) { return setEditName(event.target.value); } }), _jsx("button", { onClick: handleSave, children: "Spara \u00E4ndringar" }), message && _jsx("p", { children: message })] }))] }));
+    return (_jsxs(LoginContainer, { children: [_jsx("h2", { children: "Logga in" }), _jsx("input", { type: "email", placeholder: "E-post", value: email, onChange: function (event) { return setEmail(event.target.value); } }), _jsx("input", { type: "password", placeholder: "L\u00F6senord", value: password, onChange: function (event) { return setPassword(event.target.value); } }), error && _jsx("p", { children: error }), _jsx("button", { onClick: handleLogin, children: "Logga in" }), _jsxs("div", { children: [_jsx("p", { children: "Har du inget konto?" }), _jsx("button", { onClick: handleRegisterRedirect, children: "Registrera dig" })] })] }));
 }
 var LoginContainer = styled.div(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n  padding: 20px;\n  max-width: 500px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n\n  div {\n    margin-top: 20px;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n  }\n\n  button {\n    cursor: pointer;\n  }\n"], ["\n  padding: 20px;\n  max-width: 500px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n\n  div {\n    margin-top: 20px;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n  }\n\n  button {\n    cursor: pointer;\n  }\n"])));
 export default Login;

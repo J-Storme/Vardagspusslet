@@ -46,10 +46,11 @@ async function authenticate(request: UserRequest, response: Response, next: Next
     token = token.slice(7); // Tar bort "Bearer "
   }
 
-  console.log('Token i middleware-kontrollen:', token);
+  //console.log('Token i middleware-kontrollen:', token);
 
   if (!token) {
-    return response.status(401).json({ error: 'Token saknas' });
+    response.status(401).json({ error: 'Token saknas' });
+    return;
   }
 
   try {
@@ -58,7 +59,8 @@ async function authenticate(request: UserRequest, response: Response, next: Next
     const user = result.rows[0];
 
     if (!user) {
-      return response.status(401).json({ error: 'Ogiltig token' });
+      response.status(401).json({ error: 'Ogiltig token' });
+      return;
     }
 
     // Spara användaren i request-objektet
@@ -946,6 +948,11 @@ app.get('/api/categories', async (_request, response) => {
 
 // Servera frontend från dist-mappen
 app.use(express.static(path.join(path.resolve(), 'dist')))
+
+// Fallback-route för SPA-routing, skicka alltid index.html
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(path.resolve(), 'dist', 'index.html'));
+});
 
 app.listen(port, () => {
   console.log(`Servern körs på http://localhost:${port}`);

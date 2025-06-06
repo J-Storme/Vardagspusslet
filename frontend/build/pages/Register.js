@@ -43,7 +43,6 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useLogin } from '../context/LoginContext';
-import Button from '../components/Button';
 function Register() {
     var _this = this;
     var _a = useState(''), name = _a[0], setName = _a[1];
@@ -53,7 +52,7 @@ function Register() {
     var navigate = useNavigate();
     var login = useLogin().login;
     var handleRegister = function () { return __awaiter(_this, void 0, void 0, function () {
-        var response, textData, data, error_1;
+        var response, data, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -64,7 +63,7 @@ function Register() {
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, fetch('http://localhost:8080/register', {
+                    return [4 /*yield*/, fetch('http://localhost:8080/api/register', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ name: name, email: email, password: password }),
@@ -73,9 +72,8 @@ function Register() {
                     response = _a.sent();
                     return [4 /*yield*/, response.json()];
                 case 3:
-                    textData = _a.sent();
-                    console.log('Response text:', textData);
-                    data = textData ? JSON.parse(textData) : {};
+                    data = _a.sent();
+                    console.log('Response text:', data);
                     if (!response.ok) {
                         setError(data.error || 'Kunde inte registrera användare');
                         return [2 /*return*/];
@@ -84,8 +82,9 @@ function Register() {
                     localStorage.setItem('token', data.token); // Använd token som returnerades vid registreringen
                     localStorage.setItem('userEmail', email);
                     localStorage.setItem('userName', name);
+                    localStorage.setItem('userId', data.id.toString());
                     // Logga in användaren direkt
-                    login(data.token, data.email, data.name);
+                    login(data.token, data.email, data.name, data.id);
                     navigate('/'); // Navigera till home efter inloggning
                     return [3 /*break*/, 5];
                 case 4:
@@ -95,10 +94,12 @@ function Register() {
             }
         });
     }); };
-    return (_jsxs(_Fragment, { children: [_jsx("h2", { children: "Registrera ett konto f\u00F6r hush\u00E5llet" }), _jsxs(RegisterContainer, { children: [_jsxs(LabelRow, { children: [_jsx("label", { htmlFor: "name", children: "Hush\u00E5llets namn:" }), _jsx("input", { type: "text", placeholder: "Hush\u00E5llets namn", value: name, onChange: function (event) { return setName(event.target.value); } })] }), _jsxs(LabelRow, { children: [_jsx("label", { htmlFor: "email", children: "E-post:" }), _jsx("input", { type: "email", placeholder: "E-post", value: email, onChange: function (event) { return setEmail(event.target.value); } })] }), _jsxs(LabelRow, { children: [_jsx("label", { htmlFor: "password", children: "L\u00F6senord:" }), _jsx("input", { type: "password", placeholder: "L\u00F6senord", value: password, onChange: function (event) { return setPassword(event.target.value); } })] }), error && _jsx("p", { children: error }), _jsx(Button, { onClick: handleRegister, children: "Registrera" })] })] }));
+    return (_jsx(_Fragment, { children: _jsxs(RegisterContainer, { children: [_jsx("h2", { children: "Registrera ett konto f\u00F6r hush\u00E5llet" }), _jsxs(LabelRow, { children: [_jsx("label", { htmlFor: "name", children: "Hush\u00E5llets namn:" }), _jsx("input", { type: "text", placeholder: "Hush\u00E5llets namn", value: name, onChange: function (event) { return setName(event.target.value); } })] }), _jsxs(LabelRow, { children: [_jsx("label", { htmlFor: "email", children: "E-post:" }), _jsx("input", { type: "email", placeholder: "E-post", value: email, onChange: function (event) { return setEmail(event.target.value); } })] }), _jsxs(LabelRow, { children: [_jsx("label", { htmlFor: "password", children: "L\u00F6senord:" }), _jsx("input", { type: "password", placeholder: "L\u00F6senord", value: password, onChange: function (event) { return setPassword(event.target.value); } })] }), error && _jsx("p", { children: error }), _jsx(Button, { onClick: handleRegister, children: "Registrera" })] }) }));
 }
-var RegisterContainer = styled.div(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n  padding: 20px;\n  max-width: 400px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n"], ["\n  padding: 20px;\n  max-width: 400px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n"])));
-var LabelRow = styled.div(templateObject_2 || (templateObject_2 = __makeTemplateObject(["\n  display: flex;\n  align-items: center;\n  gap: 12px;\n\n  label {\n    font-weight: bold;\n    width: 100px; \n  }\n\n  input {\n    flex: 1;\n    padding: 8px;\n    font-size: 16px;\n  }\n"], ["\n  display: flex;\n  align-items: center;\n  gap: 12px;\n\n  label {\n    font-weight: bold;\n    width: 100px; \n  }\n\n  input {\n    flex: 1;\n    padding: 8px;\n    font-size: 16px;\n  }\n"])));
 export default Register;
-var templateObject_1, templateObject_2;
+// Styling
+var RegisterContainer = styled.div(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n  padding: 20px;\n  max-width: 400px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n\n  h2 {\n  margin-top: 30px;\n  }\n"], ["\n  padding: 20px;\n  max-width: 400px;\n  margin: 0 auto;\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n\n  h2 {\n  margin-top: 30px;\n  }\n"])));
+var LabelRow = styled.div(templateObject_2 || (templateObject_2 = __makeTemplateObject(["\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  \n  label {\n    font-weight: bold;\n    width: 100px; \n  }\n\n  input {\n    flex: 1;\n    padding: 8px;\n    font-size: 16px;\n  }\n"], ["\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  \n  label {\n    font-weight: bold;\n    width: 100px; \n  }\n\n  input {\n    flex: 1;\n    padding: 8px;\n    font-size: 16px;\n  }\n"])));
+var Button = styled.button(templateObject_3 || (templateObject_3 = __makeTemplateObject(["\n  display: inline-block;\n  background-color:rgb(117, 119, 212);\n  color: white;\n  font-weight: bold;\n  padding: 0.75rem 1.25rem;\n  border: none;\n  margin-left: 7rem;\n  margin-right: 0px;\n  border-radius: 8px;\n  cursor: pointer;\n  transition: background-color 0.3s;\n\n  &:hover {\n    background-color:rgb(138, 212, 142);\n  }\n"], ["\n  display: inline-block;\n  background-color:rgb(117, 119, 212);\n  color: white;\n  font-weight: bold;\n  padding: 0.75rem 1.25rem;\n  border: none;\n  margin-left: 7rem;\n  margin-right: 0px;\n  border-radius: 8px;\n  cursor: pointer;\n  transition: background-color 0.3s;\n\n  &:hover {\n    background-color:rgb(138, 212, 142);\n  }\n"])));
+var templateObject_1, templateObject_2, templateObject_3;
 //# sourceMappingURL=Register.js.map

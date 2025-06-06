@@ -950,8 +950,8 @@ app.get('/api/categories', async (_request, response) => {
 app.use(express.static(path.join(path.resolve(), 'dist')))
 
 // Fallback-route för SPA-routing, skicka alltid index.html
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(path.resolve(), 'dist', 'index.html'));
+app.get('*', (request, response) => {
+  response.sendFile(path.join(path.resolve(), 'dist', 'index.html'));
 });
 
 app.listen(port, () => {

@@ -32,10 +32,10 @@ app.use(express.json()); // middleware för att tolka JSON-body
 // Anslut till PostgreSQL-databas
 const client = new Client({
   connectionString: process.env.PGURI,
-  ssl: { rejectUnauthorized: false },
-  client_encoding: 'UTF8'
+  ssl: { rejectUnauthorized: false }
 });
 client.connect();
+
 
 // Middleware för att autentisera token
 async function authenticate(request: UserRequest, response: Response, next: NextFunction) {
@@ -953,6 +953,8 @@ app.use(express.static(path.join(path.resolve(), 'dist')))
 app.get('*', (request, response) => {
   response.sendFile(path.join(path.resolve(), 'dist', 'index.html'));
 });
+
+console.log('Använder databas-connection-string:', process.env.PGURI);
 
 app.listen(port, () => {
   console.log(`Servern körs på http://localhost:${port}`);

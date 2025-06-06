@@ -64,7 +64,7 @@ user_id INTEGER REFERENCES users(id),
 category_id INTEGER REFERENCES categories(id)
 );
 
--- kopllingstabell för att kunna koppla flera veckodagar till uppgift
+-- kopplingstabell för att kunna koppla flera veckodagar till en uppgift
 DROP TABLE IF EXISTS task_weekdays;
 CREATE TABLE task_weekdays (
   task_id INTEGER REFERENCES tasks(id) ON DELETE CASCADE,

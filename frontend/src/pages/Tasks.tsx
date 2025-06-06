@@ -60,7 +60,6 @@ function Tasks() {
       return;
     }
 
-
     // Hämta tasks
     function fetchTasks() {
       return fetch('http://localhost:8080/api/tasks', {
@@ -123,7 +122,7 @@ function Tasks() {
       return;
     }
 
-    // Kontrollera att titel finns
+    // Om titel är tom
     if (newTitle.trim() === '') {
       alert('Namn på uppgiften måste fyllas i');
       return;
@@ -141,8 +140,6 @@ function Tasks() {
       //recurring_weekdays: newRecurring ? newRecurringWeekday : []
     };
 
-    console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
-
     fetch('http://localhost:8080/api/tasks', {
       method: 'POST',
       headers: {
@@ -157,10 +154,11 @@ function Tasks() {
         }
         return response.json();
       })
+      // svaret från backend sparas som addedTask
       .then(addedTask => {
-        console.log('Ny uppgift från server:', addedTask);
 
-        setTasks(prev => [...prev, addedTask]);
+        // Skapar en ny kopia med allt som fanns förut
+        setTasks(previous => [...previous, addedTask]);
 
         // Nollställ formulärfält
         setNewTitle('');
@@ -405,11 +403,13 @@ function Tasks() {
           .sort((a, b) => b.id - a.id)
           .map(task => (
             <TaskItem key={task.id} $completed={task.completed}>
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={() => toggleTaskCompleted(task.id)}
-              />
+              <CheckboxStyled>
+                <input
+                  type="checkbox"
+                  checked={task.completed}
+                  onChange={() => toggleTaskCompleted(task.id)}
+                />
+              </CheckboxStyled>
               <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
               { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
               och [0] tar första delen av arrayen som är datumet*/}
@@ -570,6 +570,18 @@ const StyledFieldset = styled.fieldset`
   border: none; 
   padding: 0;
   margin: 1rem 0;
+`;
+
+const CheckboxStyled = styled.div`
+  display: flex;
+  align-items: center;
+
+  input[type='checkbox'] {
+    width: 16px;
+    height: 16px;
+    accent-color: rgb(117, 119, 212); 
+    cursor: pointer;
+  }
 `;
 
 const DeleteButton = styled.button`

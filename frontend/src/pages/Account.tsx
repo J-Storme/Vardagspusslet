@@ -19,7 +19,6 @@ const Account = () => {
 
   const token = localStorage.getItem('token');
 
-  // Hämta suerName från local storage
   useEffect(() => {
     const storedName = localStorage.getItem('userName');
     if (storedName) {
@@ -27,15 +26,16 @@ const Account = () => {
     }
   }, []);
 
-  // Hämta familjemedlemar från backend
+
   useEffect(() => {
     if (!token) return;
 
+    // Hämta familjemedlemmar från backend
     const fetchMembers = async () => {
       try {
         const response = await fetch('/api/family-members', {
           headers: {
-            'Authorization': `Bearer ${token}` // Eller bara token
+            'Authorization': `Bearer ${token}`
           }
         });
 

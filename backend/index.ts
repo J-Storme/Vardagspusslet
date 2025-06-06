@@ -23,7 +23,7 @@ const port = process.env.PORT || 8080;
 
 // middleware som löser cors
 app.use(cors({
-  origin: 'http://localhost:5173', /*+ länk till render-url */
+  origin: 'http://localhost:5173',
   credentials: true
 }));
 
@@ -88,7 +88,7 @@ app.get('/api', (_request, response) => {
   response.send({ test: 'test' })
 })
 
-// POST & INSERT, registera användare FUNKAR!
+// POST registera användare
 app.post('/api/register', async (request, response) => {
   const { email, password, name } = request.body;
   const token = uuidv4();
@@ -130,7 +130,7 @@ app.post('/api/register', async (request, response) => {
 });
 
 
-// POST login FUNKAR
+// POST login 
 app.post('/api/login', async (request, response) => {
   const { email, password } = request.body;
 
@@ -181,7 +181,7 @@ app.get('/api/user', authenticate, async (request, response) => {
 });
 
 
-// GET api Hämta familjemedlemmar FUNKAR
+// GET api Hämta familjemedlemmar 
 app.get('/api/family-members', authenticate, async (request, response) => {
   const userId = (request as UserRequest).user?.id;
 
@@ -200,7 +200,7 @@ app.get('/api/family-members', authenticate, async (request, response) => {
 });
 
 
-// POST Lägga till familjemedlem FUNKAR
+// POST Lägga till familjemedlem 
 app.post('/api/family-members', authenticate, async (request, response) => {
   const { name, role, profile_image } = request.body;
   const userId = (request as UserRequest).user?.id;
@@ -220,7 +220,7 @@ app.post('/api/family-members', authenticate, async (request, response) => {
 });
 
 
-// PUT redigera familjemedlem FUNKAR
+// PUT redigera familjemedlem 
 app.put('/api/family-members/:id', async function (request, response) {
   // Hämta ID från URL:en
   const familyMemberId = request.params.id;
@@ -247,7 +247,6 @@ app.put('/api/family-members/:id', async function (request, response) {
       [name, role, profile_image || null, familyMemberId]
     );
 
-    // Skicka bekräftelse till klienten
     response.status(200).json({ message: 'Familjemedlem uppdaterad' });
 
   } catch (error) {
@@ -257,7 +256,7 @@ app.put('/api/family-members/:id', async function (request, response) {
 });
 
 
-// DELETE Ta bort familjemedlemn FUNKAR
+// DELETE Ta bort familjemedlem 
 app.delete('/api/family-members/:id', async function (request, response) {
   // Hämta id på familjemedlem från URL:en
   const familyMemberId = request.params.id;
@@ -352,15 +351,13 @@ app.get('/api/tasks', authenticate, async (request, response) => {
 
 // POST tasks
 app.post('/api/tasks', authenticate, async (request, response) => {
+  // Hämta info som skickats in från frontend
   const { title, description, due_date, family_member_ids, event_id } = request.body;
+  // Hämta användarens ID från request-objektet (som lades till i authenticate-middlewaret)
   const userId = (request as UserRequest).user?.id;
 
-  console.log('family_member_ids:', family_member_ids);
-  console.log('typeof family_member_ids:', typeof family_member_ids);
-  console.log('Array.isArray(family_member_ids):', Array.isArray(family_member_ids));
-
   try {
-    // Kolla att familjemedlemmen tillhör användaren, om det finns family_member_ids
+    // Kolla att familjemedlemmen tillhör användaren (om det finns family_member_ids)
     if (family_member_ids && family_member_ids.length > 0) {
       const checkFamilyMembers = await client.query(
         `SELECT id FROM family_members WHERE id = ANY($1) AND user_id = $2`,
@@ -372,12 +369,13 @@ app.post('/api/tasks', authenticate, async (request, response) => {
       }
     }
 
-    // Lägg till uppgiften
+    // Skapa uppgiften och få tillbaka den nyainsatta raden
     const insertTaskResult = await client.query(
       `INSERT INTO tasks (title, description, due_date, event_id) VALUES ($1, $2, $3, $4) RETURNING *`,
       [title, description, due_date || null, event_id || null]
     );
 
+    // Spara den nyss skapade uppgiften
     const newTask = insertTaskResult.rows[0];
 
 
@@ -388,7 +386,7 @@ app.post('/api/tasks', authenticate, async (request, response) => {
           `INSERT INTO task_family_members (task_id, family_member_id) VALUES ($1, $2)`,
           [newTask.id, familyMemberId]
         );
-        console.log(`Lade till koppling: task ${newTask.id} -> family_member ${familyMemberId}`);
+        ;
       }
     }
 
@@ -397,9 +395,10 @@ app.post('/api/tasks', authenticate, async (request, response) => {
       `SELECT family_member_id FROM task_family_members WHERE task_id = $1`,
       [newTask.id]
     );
+    // Lägg ID:na till en array
     const familyMemberIds = familyMembersResult.rows.map(row => row.family_member_id);
 
-    // Skicka tillbaka task inklusive kopplade family_member_ids
+    // Skicka tillbaka task som svar inklusive kopplade family_member_ids
     response.status(201).json({
       ...newTask,
       family_member_ids: familyMemberIds

@@ -1,39 +1,13 @@
-var __makeTemplateObject =
-  (this && this.__makeTemplateObject) ||
-  function (cooked, raw) {
-    if (Object.defineProperty) {
-      Object.defineProperty(cooked, 'raw', { value: raw });
-    } else {
-      cooked.raw = raw;
-    }
+var __makeTemplateObject = (this && this.__makeTemplateObject) || function (cooked, raw) {
+    if (Object.defineProperty) { Object.defineProperty(cooked, "raw", { value: raw }); } else { cooked.raw = raw; }
     return cooked;
-  };
+};
 import { createGlobalStyle } from 'styled-components';
 import styled from 'styled-components';
 // Globala stilar
-var GlobalStyles = createGlobalStyle(
-  templateObject_1 ||
-    (templateObject_1 = __makeTemplateObject(
-      [
-        "\n\n\n\n  * {\n    margin: 0px;\n    padding: 0px;\n    box-sizing: border-box; \n    font-family: 'Roboto', Arial, sans-serif;\n      }\n\n  body {\n    background-color:rgb(245, 245, 245);\n    color: #333;\n    min-height: 100vh;\n    font-family: Arial, sans-serif;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n   }\n\n  h1 {\n  text-align: center;\n  font-size: 26px;\n  margin: 10px;\n  font-family: 'Indie Flower', Arial, sans-serif;\n  }\n\n  h2 {\n  text-align: center;\n  font-size: 20px;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  p {\n  margin: 5px 12px; \n  text-align: center;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  a {\n    text-decoration: none;\n    color: inherit;\n  }\n",
-      ],
-      [
-        "\n\n\n\n  * {\n    margin: 0px;\n    padding: 0px;\n    box-sizing: border-box; \n    font-family: 'Roboto', Arial, sans-serif;\n      }\n\n  body {\n    background-color:rgb(245, 245, 245);\n    color: #333;\n    min-height: 100vh;\n    font-family: Arial, sans-serif;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n   }\n\n  h1 {\n  text-align: center;\n  font-size: 26px;\n  margin: 10px;\n  font-family: 'Indie Flower', Arial, sans-serif;\n  }\n\n  h2 {\n  text-align: center;\n  font-size: 20px;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  p {\n  margin: 5px 12px; \n  text-align: center;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  a {\n    text-decoration: none;\n    color: inherit;\n  }\n",
-      ],
-    )),
-);
+var GlobalStyles = createGlobalStyle(templateObject_1 || (templateObject_1 = __makeTemplateObject(["\n\n\n\n  * {\n    margin: 0px;\n    padding: 0px;\n    box-sizing: border-box; \n    font-family: 'Roboto', Arial, sans-serif;\n      }\n\n  body {\n    background-color:rgb(245, 245, 245);\n    color: #333;\n    min-height: 100vh;\n    font-family: Arial, sans-serif;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n   }\n\n  h1 {\n  text-align: center;\n  font-size: 26px;\n  margin: 10px;\n  font-family: 'Indie Flower', Arial, sans-serif;\n  }\n\n  h2 {\n  text-align: center;\n  font-size: 20px;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  p {\n  margin: 5px 12px; \n  text-align: center;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  a {\n    text-decoration: none;\n    color: inherit;\n  }\n"], ["\n\n\n\n  * {\n    margin: 0px;\n    padding: 0px;\n    box-sizing: border-box; \n    font-family: 'Roboto', Arial, sans-serif;\n      }\n\n  body {\n    background-color:rgb(245, 245, 245);\n    color: #333;\n    min-height: 100vh;\n    font-family: Arial, sans-serif;\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n   }\n\n  h1 {\n  text-align: center;\n  font-size: 26px;\n  margin: 10px;\n  font-family: 'Indie Flower', Arial, sans-serif;\n  }\n\n  h2 {\n  text-align: center;\n  font-size: 20px;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  p {\n  margin: 5px 12px; \n  text-align: center;\n  font-family: 'Montserrat', Arial, sans-serif;\n  }\n\n  a {\n    text-decoration: none;\n    color: inherit;\n  }\n"])));
 // AppContainer för att wrappa hela applikationen
-export var AppContainer = styled.div(
-  templateObject_2 ||
-    (templateObject_2 = __makeTemplateObject(
-      [
-        '\n  min-height: 100vh;\n  min-width: 700px;\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  /*background-color: rgb(139, 203, 255);*/\n  background: linear-gradient(\n  135deg,\n  rgb(210, 212, 253), \n  rgb(166, 167, 218), \n  rgb(90, 92, 160)    \n);\n',
-      ],
-      [
-        '\n  min-height: 100vh;\n  min-width: 700px;\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  /*background-color: rgb(139, 203, 255);*/\n  background: linear-gradient(\n  135deg,\n  rgb(210, 212, 253), \n  rgb(166, 167, 218), \n  rgb(90, 92, 160)    \n);\n',
-      ],
-    )),
-);
+export var AppContainer = styled.div(templateObject_2 || (templateObject_2 = __makeTemplateObject(["\n  min-height: 100vh;\n  min-width: 700px;\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  /*background-color: rgb(139, 203, 255);*/\n  background: linear-gradient(\n    135deg,\n    rgb(210, 212, 253),\n    rgb(166, 167, 218),\n    rgb(90, 92, 160)\n  );\n"], ["\n  min-height: 100vh;\n  min-width: 700px;\n  width: 100%;\n  display: flex;\n  flex-direction: column;\n  /*background-color: rgb(139, 203, 255);*/\n  background: linear-gradient(\n    135deg,\n    rgb(210, 212, 253),\n    rgb(166, 167, 218),\n    rgb(90, 92, 160)\n  );\n"])));
 export default GlobalStyles;
 var templateObject_1, templateObject_2;
 //# sourceMappingURL=GlobalStyles.js.map

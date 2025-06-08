@@ -86,10 +86,12 @@ async function authenticate(
   }
 }
 
+/*
 // GET
 app.get('/', (_request, response) => {
   response.send('root');
 });
+*/
 
 // GET api
 app.get('/api', (_request, response) => {

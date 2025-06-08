@@ -66,7 +66,7 @@ function Tasks() {
 
     // Hämta tasks
     function fetchTasks() {
-      return fetch('http://localhost:8080/api/tasks', {
+      return fetch('api/tasks', {
         headers: { Authorization: `Bearer ${token}` },
       }).then((response) => {
         console.log('fetchTasks status:', response.status);
@@ -79,7 +79,7 @@ function Tasks() {
 
     // Hämta familjemedlemmar
     function fetchFamilyMembers() {
-      return fetch('http://localhost:8080/api/family-members', {
+      return fetch('api/family-members', {
         headers: { Authorization: `Bearer ${token}` },
       }).then((response) => {
         console.log('fetchFamilyMembers status:', response.status);
@@ -92,7 +92,7 @@ function Tasks() {
 
     // Hämta events
     function fetchEvents() {
-      return fetch('http://localhost:8080/api/events', {
+      return fetch('api/events', {
         headers: { Authorization: `Bearer ${token}` },
       }).then((response) => {
         console.log('fetchEvents status:', response.status);
@@ -144,7 +144,7 @@ function Tasks() {
       //recurring_weekdays: newRecurring ? newRecurringWeekday : []
     };
 
-    fetch('http://localhost:8080/api/tasks', {
+    fetch('/api/tasks', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ function Tasks() {
       return;
     }
 
-    fetch(`http://localhost:8080/api/tasks/${updatedTask.id}`, {
+    fetch(`api/tasks/${updatedTask.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -225,7 +225,7 @@ function Tasks() {
       return;
     }
 
-    fetch(`http://localhost:8080/api/tasks/${taskId}`, {
+    fetch(`api/tasks/${taskId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -233,7 +233,7 @@ function Tasks() {
         if (!response.ok) {
           throw new Error('Misslyckades med att radera uppgift');
         }
-        setTasks((prev) => prev.filter((task) => task.id !== taskId));
+        setTasks((previous) => previous.filter((task) => task.id !== taskId));
       })
       .catch((error) => {
         console.error(error);

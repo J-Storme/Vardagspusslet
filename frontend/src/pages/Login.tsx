@@ -50,7 +50,6 @@ function Login() {
     navigate('/register');
   };
 
-
   return (
     <LoginContainer>
       <h2>Logga in</h2>

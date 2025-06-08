@@ -19,7 +19,7 @@ function Register() {
 
     try {
       // Först registrera användaren
-      const response = await fetch('http://localhost:8080/api/register', {
+      const response = await fetch('api/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
@@ -27,7 +27,7 @@ function Register() {
 
       // Logga svaret för att kontrollera vad servern returnerar
       const data = await response.json();
-      console.log('Response text:', data);
+      //console.log('Response text:', data);
 
       if (!response.ok) {
         setError(data.error || 'Kunde inte registrera användare');

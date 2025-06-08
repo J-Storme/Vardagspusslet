@@ -67,7 +67,7 @@ function WeeklySchedule() {
 
   // Hämta tasks
   function fetchTasks() {
-    return fetch('http://localhost:8080/api/week-tasks', {
+    return fetch('api/week-tasks', {
       headers: { Authorization: `Bearer ${token}` },
     }).then((response) => {
       console.log('fetchTasks status:', response.status);
@@ -80,7 +80,7 @@ function WeeklySchedule() {
 
   // Hämta familjemedlemmar
   function fetchFamilyMembers() {
-    return fetch('http://localhost:8080/api/family-members', {
+    return fetch('api/family-members', {
       headers: { Authorization: `Bearer ${token}` },
     }).then((response) => {
       console.log('fetchFamilyMembers status:', response.status);
@@ -93,7 +93,7 @@ function WeeklySchedule() {
 
   // Hämta kategorier
   function fetchCategories() {
-    return fetch('http://localhost:8080/api/categories', {
+    return fetch('api/categories', {
       headers: { Authorization: `Bearer ${token}` },
     }).then((response) => {
       console.log('fetchCategories status:', response.status);
@@ -167,7 +167,7 @@ function WeeklySchedule() {
     //console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
     //console.log("Recurring weekdays to send:", newRecurringWeekday);
 
-    fetch('http://localhost:8080/api/week-tasks', {
+    fetch('api/week-tasks', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ function WeeklySchedule() {
       return;
     }
 
-    fetch(`http://localhost:8080/api/week-tasks/${taskId}`, {
+    fetch(`api/week-tasks/${taskId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -298,7 +298,7 @@ function WeeklySchedule() {
       completed: !task.completed,
     };
 
-    fetch(`http://localhost:8080/api/week-tasks/${task.id}`, {
+    fetch(`api/week-tasks/${task.id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

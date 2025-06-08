@@ -29,9 +29,7 @@ function Events({ userId, token, events, setEvents }: Props) {
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAddingEvent, setIsAddingEvent] = useState(false); // Lägg till event-form visas ej från början
-  //const [events, setEvents] = useState<Event[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [loading, setLoading] = useState(true);
   //const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Hämta events och familjemedlemmar när komponenten laddas
@@ -43,10 +41,10 @@ function Events({ userId, token, events, setEvents }: Props) {
   async function fetchFamilyMembers() {
     try {
       //const token = localStorage.getItem('token');
-      const res = await fetch('/api/family-members', {
+      const response = await fetch('/api/family-members', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+      const data = await response.json();
       setFamilyMembers(data);
     } catch (error) {
       console.error('Kunde inte hämta familjemedlemmar', error);
@@ -64,20 +62,17 @@ function Events({ userId, token, events, setEvents }: Props) {
   async function fetchEvents() {
     if (!token) {
       setErrorMessage('Ingen token hittades, du är inte inloggad');
-      setLoading(false);
       return;
     }
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/events', {
+      const response = await fetch('/api/events', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+      const data = await response.json();
       console.log('Events från backend:', data);
 
-      /*if (Array.isArray(data)) {
-        setEvents(data);*/
       if (Array.isArray(data)) {
         const mappedEvents = data.map((ev: Event) => ({
           id: ev.id,
@@ -117,7 +112,7 @@ function Events({ userId, token, events, setEvents }: Props) {
     const endTimePlusZeros = endTime.length === 5 ? endTime + ':00' : endTime;
 
     try {
-      const res = await fetch('/api/events', {
+      const response = await fetch('/api/events', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,8 +129,8 @@ function Events({ userId, token, events, setEvents }: Props) {
         }),
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         setErrorMessage(errorData.error || 'Något gick fel');
         return;
       }
@@ -158,11 +153,11 @@ function Events({ userId, token, events, setEvents }: Props) {
     if (!window.confirm('Är du säker på att du vill ta bort eventet?')) return;
 
     try {
-      const res = await fetch(`/api/events/${id}`, {
+      const response = await fetch(`/api/events/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
+      if (response.ok) {
         setEvents(events.filter((ev) => ev.id !== id));
       } else {
         alert('Kunde inte ta bort eventet');
@@ -176,7 +171,6 @@ function Events({ userId, token, events, setEvents }: Props) {
   return (
     <EventsFormContainer>
       <Title>Aktiviteter</Title>
-      {loading && <p>Laddar...</p>}
       <FormContainer>
         {!isAddingEvent && (
           <SubmitButton

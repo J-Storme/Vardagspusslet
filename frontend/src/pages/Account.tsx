@@ -31,7 +31,7 @@ const Account = () => {
     // Hämta familjemedlemmar från backend
     const fetchMembers = async () => {
       try {
-        const response = await fetch('/api/family-members', {
+        const response = await fetch('api/family-members', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -55,7 +55,7 @@ const Account = () => {
     if (newName.trim() === '') return;
 
     try {
-      const response = await fetch('/api/family-members', {
+      const response = await fetch('api/family-members', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

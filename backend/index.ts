@@ -35,6 +35,8 @@ const client = new Client({
   connectionString: process.env.PGURI,
   ssl: { rejectUnauthorized: false },
 });
+console.log('PGURI:', process.env.PGURI);
+console.log('PGSSLMODE:', process.env.PGSSLMODE);
 client.connect();
 
 // Middleware för att autentisera token

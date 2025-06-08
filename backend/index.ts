@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { Client } from 'pg';
 import dotenv from 'dotenv';
-import cors from 'cors'
+import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 
@@ -14,7 +14,6 @@ interface UserRequest extends Request {
   };
 }
 
-
 // Läs in miljövariabler från .env-fil
 dotenv.config();
 
@@ -22,31 +21,36 @@ const app = express();
 const port = process.env.PORT || 8080;
 
 // middleware som löser cors
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: 'http://localhost:5173',
+    credentials: true,
+  }),
+);
 
 app.use(express.json()); // middleware för att tolka JSON-body
 
 // Anslut till PostgreSQL-databas
 const client = new Client({
   connectionString: process.env.PGURI,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 client.connect();
 
-
 // Middleware för att autentisera token
-async function authenticate(request: UserRequest, response: Response, next: NextFunction) {
+async function authenticate(
+  request: UserRequest,
+  response: Response,
+  next: NextFunction,
+) {
   // Hämta token från query-parametern eller authorization-headren
-  let token = request.query.token as string || request.headers.authorization;
+  let token = (request.query.token as string) || request.headers.authorization;
 
   if (token && token?.startsWith('Bearer ')) {
     token = token.slice(7); // Tar bort "Bearer "
   }
 
-  //console.log('Token i middleware-kontrollen:', token);
+  //console.log('Token:', token);
 
   if (!token) {
     response.status(401).json({ error: 'Token saknas' });
@@ -55,7 +59,9 @@ async function authenticate(request: UserRequest, response: Response, next: Next
 
   try {
     // Hämta användaren baserat på token
-    const result = await client.query('SELECT * FROM users WHERE token = $1', [token]);
+    const result = await client.query('SELECT * FROM users WHERE token = $1', [
+      token,
+    ]);
     const user = result.rows[0];
 
     if (!user) {
@@ -78,17 +84,15 @@ async function authenticate(request: UserRequest, response: Response, next: Next
   }
 }
 
-
 // GET
 app.get('/', (_request, response) => {
   response.send('root');
 });
 
-
 // GET api
 app.get('/api', (_request, response) => {
-  response.send({ test: 'test' })
-})
+  response.send({ test: 'test' });
+});
 
 // POST registera användare
 app.post('/api/register', async (request, response) => {
@@ -97,22 +101,26 @@ app.post('/api/register', async (request, response) => {
 
   try {
     // Kontrollera om användaren redan finns i databasen
-    const existingUser = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    const existingUser = await client.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email],
+    );
 
     if (existingUser.rows.length > 0) {
-      return response.status(400).json({ error: 'E-postadress är redan registrerad' });
+      response.status(400).json({ error: 'E-postadress är redan registrerad' });
+      return;
     }
 
     // Sätt in den nya användaren i databasen
     await client.query(
       'INSERT INTO users (token, email, password, name) VALUES ($1, $2, $3, $4)',
-      [token, email, password, name]
+      [token, email, password, name],
     );
 
     // Hämta den nya användaren
     const selectResult = await client.query(
       'SELECT * FROM users WHERE email = $1',
-      [email]
+      [email],
     );
 
     const newUser = selectResult.rows[0];
@@ -122,44 +130,54 @@ app.post('/api/register', async (request, response) => {
       token: newUser.token,
       name: newUser.name,
       email: newUser.email,
-      id: newUser.id
+      id: newUser.id,
     });
-
   } catch (error) {
     console.error('Fel vid registrering:', error);
-    return response.status(500).json({ error: 'Kunde inte registrera användare' });
+    return response
+      .status(500)
+      .json({ error: 'Kunde inte registrera användare' });
   }
 });
 
-
-// POST login 
+// POST login
 app.post('/api/login', async (request, response) => {
   const { email, password } = request.body;
 
   // hämta en user från databas där email är samma som skrivs in
   try {
-    const result = await client.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await client.query('SELECT * FROM users WHERE email = $1', [
+      email,
+    ]);
+
     const user = result.rows[0];
 
     if (!user || password !== user.password) {
-      return response.status(401).json({ error: 'Fel e-post eller lösenord' });
+      response.status(401).json({ error: 'Fel e-post eller lösenord' });
+      return;
     }
 
     // Skapa en token
     const token = uuidv4();
 
     // Uppdatera token i databasen
-    await client.query('UPDATE users SET token = $1 WHERE id = $2', [token, user.id]);
-    response.json({
-      message: 'Inloggad', token, email: user.email, name: user.name, id: user.id
-    });
+    await client.query('UPDATE users SET token = $1 WHERE id = $2', [
+      token,
+      user.id,
+    ]);
 
+    response.json({
+      message: 'Inloggad',
+      token,
+      email: user.email,
+      name: user.name,
+      id: user.id,
+    });
   } catch (error) {
     console.error('Fel vid inloggning:', error);
     response.status(500).json({ error: 'Något gick fel vid inloggning' });
   }
 });
-
 
 // GET user
 app.get('/api/user', authenticate, async (request, response) => {
@@ -168,11 +186,12 @@ app.get('/api/user', authenticate, async (request, response) => {
   try {
     const result = await client.query(
       'SELECT id, name, email FROM users WHERE id = $1',
-      [userId]
+      [userId],
     );
 
     if (result.rows.length === 0) {
-      return response.status(404).json({ error: 'Användare hittades inte' });
+      response.status(404).json({ error: 'Användare hittades inte' });
+      return;
     }
 
     response.json(result.rows[0]);
@@ -182,18 +201,18 @@ app.get('/api/user', authenticate, async (request, response) => {
   }
 });
 
-
-// GET api Hämta familjemedlemmar 
+// GET api Hämta familjemedlemmar
 app.get('/api/family-members', authenticate, async (request, response) => {
   const userId = (request as UserRequest).user?.id;
 
-  console.log('Hämtar familjemedlemmar för användare:', userId);
+  //console.log('Familjemedlemmar för användare:', userId);
 
   try {
     const result = await client.query(
       'SELECT * FROM family_members WHERE user_id = $1',
-      [userId]
+      [userId],
     );
+
     response.json(result.rows);
   } catch (error) {
     console.error(error);
@@ -201,8 +220,7 @@ app.get('/api/family-members', authenticate, async (request, response) => {
   }
 });
 
-
-// POST Lägga till familjemedlem 
+// POST Lägga till familjemedlem
 app.post('/api/family-members', authenticate, async (request, response) => {
   const { name, role, profile_image } = request.body;
   const userId = (request as UserRequest).user?.id;
@@ -211,7 +229,7 @@ app.post('/api/family-members', authenticate, async (request, response) => {
     const result = await client.query(
       'INSERT INTO family_members (user_id, name, role, profile_image) VALUES ($1, $2, $3, $4) RETURNING *',
       //returning skickar tillbaka den senaste inserten
-      [userId, name, role, profile_image || null]
+      [userId, name, role, profile_image || null],
     );
 
     response.status(201).json(result.rows[0]);
@@ -221,8 +239,7 @@ app.post('/api/family-members', authenticate, async (request, response) => {
   }
 });
 
-
-// PUT redigera familjemedlem 
+// PUT redigera familjemedlem
 app.put('/api/family-members/:id', async function (request, response) {
   // Hämta ID från URL:en
   const familyMemberId = request.params.id;
@@ -236,29 +253,28 @@ app.put('/api/family-members/:id', async function (request, response) {
     // Kontrollera om familjemedlemmen finns
     const checkResult = await client.query(
       'SELECT * FROM family_members WHERE id = $1',
-      [familyMemberId]
+      [familyMemberId],
     );
 
     if (checkResult.rows.length === 0) {
-      return response.status(404).json({ error: 'Familjemedlem hittades inte' });
+      response.status(404).json({ error: 'Familjemedlem hittades inte' });
+      return;
     }
 
     // Uppdatera familjemedlemmen i databasen
     await client.query(
       'UPDATE family_members SET name = $1, role = $2, profile_image = $3 WHERE id = $4',
-      [name, role, profile_image || null, familyMemberId]
+      [name, role, profile_image || null, familyMemberId],
     );
 
     response.status(200).json({ message: 'Familjemedlem uppdaterad' });
-
   } catch (error) {
     console.error('Fel vid uppdatering av familjemedlem:', error);
     response.status(500).json({ error: 'Kunde inte uppdatera familjemedlem' });
   }
 });
 
-
-// DELETE Ta bort familjemedlem 
+// DELETE Ta bort familjemedlem
 app.delete('/api/family-members/:id', async function (request, response) {
   // Hämta id på familjemedlem från URL:en
   const familyMemberId = request.params.id;
@@ -267,63 +283,65 @@ app.delete('/api/family-members/:id', async function (request, response) {
     // Kontrollera om familjemedlemmen finns
     const checkResult = await client.query(
       'SELECT * FROM family_members WHERE id = $1',
-      [familyMemberId]
+      [familyMemberId],
     );
 
     // Om ingen familjemedlem hittades, skicka felmeddelande
     if (checkResult.rows.length === 0) {
-      return response.status(404).json({ error: 'Familjemedlem hittades inte' });
+      response.status(404).json({ error: 'Familjemedlem hittades inte' });
+      return;
     }
 
     // Radera familjemedlemmen från databasen
-    await client.query(
-      'DELETE FROM family_members WHERE id = $1',
-      [familyMemberId]
-    );
+    await client.query('DELETE FROM family_members WHERE id = $1', [
+      familyMemberId,
+    ]);
 
     // Skicka bekräftelse till klienten
     response.status(200).json({ message: 'Familjemedlem togs bort' });
-
   } catch (error) {
     console.error('Fel vid borttagning av familjemedlem:', error);
     response.status(500).json({ error: 'Kunde inte ta bort familjemedlem' });
   }
 });
 
-
-// POST Logout 
+// POST Logout
 app.post('/logout', authenticate, async (request, response) => {
   const token = (request as UserRequest).user?.token;
 
   try {
     // Loggar ut genom att sätta token till null
-    await client.query('UPDATE users SET token = NULL WHERE token = $1', [token]);
-    response.status(200).json({ message: 'Utloggad' });
+    await client.query('UPDATE users SET token = NULL WHERE token = $1', [
+      token,
+    ]);
 
+    response.status(200).json({ message: 'Utloggad' });
   } catch (error) {
     console.error('Fel vid utloggning:', error);
     response.status(500).json({ error: 'Kunde inte logga ut' });
   }
 });
 
-
 // GET tasks
 app.get('/api/tasks', authenticate, async (request, response) => {
   const userId = (request as UserRequest).user?.id;
 
+  if (!userId) {
+    return response.status(401).json({ error: 'Ej auktoriserad' });
+  }
+
   try {
     // Hämta alla tasks som är kopplade till familjemedlemmar som tillhör användaren
     const tasksResult = await client.query(
-      `
-      SELECT DISTINCT tasks.*
+      `SELECT DISTINCT tasks.*
       FROM tasks
       JOIN task_family_members tasksfamilym ON tasks.id = tasksfamilym.task_id
       JOIN family_members fm ON tasksfamilym.family_member_id = fm.id
       WHERE fm.user_id = $1
-      ORDER BY tasks.due_date ASC
-      `,
-      [userId]
+      ORDER BY tasks.due_date ASC`,
+      [userId],
     );
+
     const tasks = tasksResult.rows;
 
     // Hämta familjemedlemmar kopplade till varje task
@@ -333,28 +351,27 @@ app.get('/api/tasks', authenticate, async (request, response) => {
          FROM task_family_members
          JOIN family_members ON task_family_members.family_member_id = family_members.id
          WHERE task_family_members.task_id = $1`,
-        [task.id]
+        [task.id],
       );
 
       // Spara id:n och hela familjemedlemsobjektet i task
-      task.family_member_ids = familyResult.rows.map(row => row.id);
+      task.family_member_ids = familyResult.rows.map((row) => row.id);
       task.family_members = familyResult.rows;
     }
 
     // Skicka tillbaka tasks med familjemedlemmar
     response.json(tasks);
-
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: 'Kunde inte hämta tasks' });
   }
 });
 
-
 // POST tasks
 app.post('/api/tasks', authenticate, async (request, response) => {
   // Hämta info som skickats in från frontend
-  const { title, description, due_date, family_member_ids, event_id } = request.body;
+  const { title, description, due_date, family_member_ids, event_id } =
+    request.body;
   // Hämta användarens ID från request-objektet (som lades till i authenticate-middlewaret)
   const userId = (request as UserRequest).user?.id;
 
@@ -363,71 +380,79 @@ app.post('/api/tasks', authenticate, async (request, response) => {
     if (family_member_ids && family_member_ids.length > 0) {
       const checkFamilyMembers = await client.query(
         `SELECT id FROM family_members WHERE id = ANY($1) AND user_id = $2`,
-        [family_member_ids, userId]
+        [family_member_ids, userId],
       );
 
       if (checkFamilyMembers.rows.length !== family_member_ids.length) {
-        return response.status(403).json({ error: 'En eller flera familjemedlemmar tillhör inte dig' });
+        response.status(403).json({
+          error: 'Familjemedlem tillhör inte din användare',
+        });
+        return;
       }
     }
 
     // Skapa uppgiften och få tillbaka den nyainsatta raden
     const insertTaskResult = await client.query(
       `INSERT INTO tasks (title, description, due_date, event_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [title, description, due_date || null, event_id || null]
+      [title, description, due_date || null, event_id || null],
     );
 
     // Spara den nyss skapade uppgiften
     const newTask = insertTaskResult.rows[0];
-
 
     // Lägg till kopplingar i task_family_members
     if (family_member_ids && family_member_ids.length > 0) {
       for (const familyMemberId of family_member_ids) {
         await client.query(
           `INSERT INTO task_family_members (task_id, family_member_id) VALUES ($1, $2)`,
-          [newTask.id, familyMemberId]
+          [newTask.id, familyMemberId],
         );
-        ;
       }
     }
 
     // Hämta kopplade family_member_ids
     const familyMembersResult = await client.query(
       `SELECT family_member_id FROM task_family_members WHERE task_id = $1`,
-      [newTask.id]
+      [newTask.id],
     );
     // Lägg ID:na till en array
-    const familyMemberIds = familyMembersResult.rows.map(row => row.family_member_id);
+    const familyMemberIds = familyMembersResult.rows.map(
+      (row) => row.family_member_id,
+    );
 
     // Skicka tillbaka task som svar inklusive kopplade family_member_ids
     response.status(201).json({
       ...newTask,
-      family_member_ids: familyMemberIds
+      family_member_ids: familyMemberIds,
     });
-
   } catch (error) {
     console.error('Fel vid skapande av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte spara uppgiften' });
   }
 });
 
-
-
 // PUT tasks
 app.put('/api/tasks/:id', authenticate, async (request, response) => {
   const taskId = request.params.id;
   const userId = (request as UserRequest).user?.id;
-  const { title, description, due_date, completed, family_member_ids, event_id } = request.body;
+  const {
+    title,
+    description,
+    due_date,
+    completed,
+    //family_member_ids,
+    event_id,
+  } = request.body;
 
   try {
     const checkResult = await client.query(
-      `SELECT * FROM tasks WHERE id = $1`,
-      [taskId]
+      `SELECT * FROM tasks WHERE id = $1 AND user_id = $2`,
+      [taskId, userId],
     );
 
     if (checkResult.rows.length === 0) {
-      return response.status(404).json({ error: 'Uppgift hittades inte' });
+      response.status(404).json({ error: 'Uppgift hittades inte' });
+      return;
     }
 
     // Uppdatera uppgiften
@@ -445,18 +470,16 @@ app.put('/api/tasks/:id', authenticate, async (request, response) => {
         due_date || null,
         completed === undefined ? false : completed,
         event_id || null,
-        taskId
-      ]
+        taskId,
+      ],
     );
 
     response.status(200).json({ message: 'Uppgift uppdaterad' });
-
   } catch (error) {
     console.error('Fel vid uppdatering av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte uppdatera uppgift' });
   }
 });
-
 
 //DELETE tasks
 app.delete('/api/tasks/:id', authenticate, async (request, response) => {
@@ -471,23 +494,25 @@ app.delete('/api/tasks/:id', authenticate, async (request, response) => {
        JOIN task_family_members ON tasks.id = task_family_members.task_id
        JOIN family_members ON task_family_members.family_member_id = family_members.id
        WHERE tasks.id = $1 AND family_members.user_id = $2`,
-      [taskId, userId]
+      [taskId, userId],
     );
+
     if (check.rows.length === 0) {
-      return response.status(404).json({ error: 'Uppgift hittades inte eller tillhör inte dig' });
+      response.status(404).json({
+        error: 'Uppgift hittades inte eller tillhör inte dig',
+      });
+      return;
     }
 
     // Ta bort uppgiften (kommer även ta bort rader i task_family_members pga ON DELETE CASCADE)
     await client.query('DELETE FROM tasks WHERE id = $1', [taskId]);
 
     response.status(200).json({ message: 'Uppgift borttagen' });
-
   } catch (error) {
     console.error('Fel vid borttagning av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte ta bort uppgift' });
   }
 });
-
 
 // GET events
 app.get('/api/events', authenticate, async (request, response) => {
@@ -496,15 +521,13 @@ app.get('/api/events', authenticate, async (request, response) => {
   //Hämta bara familjemedlemmar som hör till inlogagd användare
   try {
     const eventsResult = await client.query(
-      `
-      SELECT DISTINCT events.*
+      `SELECT DISTINCT events.*
       FROM events
       JOIN event_family_members efm ON events.id = efm.event_id
       JOIN family_members fm ON efm.family_member_id = fm.id
       WHERE fm.user_id = $1
-      ORDER BY events.event_date ASC
-      `,
-      [userId]
+      ORDER BY events.event_date ASC`,
+      [userId],
     );
     const events = eventsResult.rows;
 
@@ -515,15 +538,14 @@ app.get('/api/events', authenticate, async (request, response) => {
          FROM event_family_members
          JOIN family_members ON event_family_members.family_member_id = family_members.id
          WHERE event_family_members.event_id = $1`,
-        [event.id]
+        [event.id],
       );
 
-      event.family_member_ids = familyResult.rows.map(row => row.id);
+      event.family_member_ids = familyResult.rows.map((row) => row.id);
       event.family_members = familyResult.rows;
     }
 
     response.json(events);
-
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: 'Kunde inte hämta events' });
@@ -532,18 +554,33 @@ app.get('/api/events', authenticate, async (request, response) => {
 
 // POST events
 app.post('/api/events', authenticate, async (request, response) => {
-  const { title, event_date, start_time, end_time, description, user_id, family_member_ids } = request.body;
+  const {
+    title,
+    event_date,
+    start_time,
+    end_time,
+    description,
+    user_id,
+    family_member_ids,
+  } = request.body;
 
   // Kontroll att minst en familjemedlem är kopplad
-  if (!family_member_ids || !Array.isArray(family_member_ids) || family_member_ids.length === 0) {
-    return response.status(400).json({ error: 'Minst en familjemedlem måste kopplas till eventet' });
+  if (
+    !family_member_ids ||
+    !Array.isArray(family_member_ids) ||
+    family_member_ids.length === 0
+  ) {
+    response.status(400).json({
+      error: 'Minst en familjemedlem måste kopplas till eventet',
+    });
+    return;
   }
 
   // Skapa event
   try {
     const insertEventResult = await client.query(
       'INSERT INTO events (title, event_date, end_time, start_time, description, user_id) VALUES ($1, $2, $3, $4, $5, $6 ) RETURNING *',
-      [title, event_date, end_time, start_time, description, user_id]
+      [title, event_date, end_time, start_time, description, user_id],
     );
     const newEvent = insertEventResult.rows[0];
 
@@ -551,7 +588,7 @@ app.post('/api/events', authenticate, async (request, response) => {
     for (const familyMemberId of family_member_ids) {
       await client.query(
         'INSERT INTO event_family_members (event_id, family_member_id) VALUES ($1, $2)',
-        [newEvent.id, familyMemberId]
+        [newEvent.id, familyMemberId],
       );
     }
 
@@ -561,28 +598,26 @@ app.post('/api/events', authenticate, async (request, response) => {
       FROM family_members
       JOIN event_family_members ON family_members.id = event_family_members.family_member_id
       WHERE event_family_members.event_id = $1`,
-      [newEvent.id]
+      [newEvent.id],
     );
 
     //const familyMemberIds = eventFamilyResult.rows.map(row => row.family_member_id);
     const familyMembers = familyMembersResult.rows;
-    console.log('Hämtade familjemedlemmar:', familyMembers);
+    //console.log('Hämtade familjemedlemmar:', familyMembers);
 
     // Skapa array med bara ids
-    const familyMemberIds = familyMembers.map(fm => fm.id);
+    const familyMemberIds = familyMembers.map((fm) => fm.id);
 
     response.status(201).json({
       ...newEvent,
       family_member_ids: familyMemberIds, //felsök
-      family_members: familyMembers
+      family_members: familyMembers,
     });
-
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: 'Kunde inte skapa event' });
   }
 });
-
 
 // DELETE Ta bort ett event
 app.delete('/api/events/:id', authenticate, async function (request, response) {
@@ -593,28 +628,24 @@ app.delete('/api/events/:id', authenticate, async function (request, response) {
     // Kontrollera om eventet finns innan vi försöker ta bort det
     const checkResult = await client.query(
       'SELECT * FROM events WHERE id = $1',
-      [eventId]
+      [eventId],
     );
 
     if (checkResult.rows.length === 0) {
-      return response.status(404).json({ error: 'Event hittades inte' });
+      response.status(404).json({ error: 'Event hittades inte' });
+      return;
     }
 
     // Ta bort eventet från databasen
-    await client.query(
-      'DELETE FROM events WHERE id = $1',
-      [eventId]
-    );
+    await client.query('DELETE FROM events WHERE id = $1', [eventId]);
 
     // Skicka ett enkelt meddelande tillbaka
     response.status(200).json({ message: 'Eventet togs bort' });
-
   } catch (error) {
     console.error('Fel vid borttagning av event:', error);
     response.status(500).json({ error: 'Kunde inte ta bort event' });
   }
 });
-
 
 //GET Veckoschema
 app.get('/api/week-tasks', authenticate, async (request, response) => {
@@ -623,9 +654,8 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
 
     // Hämta återkommande uppgifter med veckodag som array
     const recurringTasksResult = await client.query(
-      `
-  WITH task_weekdays_agg AS (
-    SELECT
+      `WITH task_weekdays_agg AS (
+      SELECT
       t.id,
       t.title,
       t.description,
@@ -673,46 +703,52 @@ app.get('/api/week-tasks', authenticate, async (request, response) => {
   FROM task_weekdays_agg twa
   LEFT JOIN categories c ON c.id = twa.category_id
   LEFT JOIN family_members_agg fma ON fma.task_id = twa.id
-  ORDER BY twa.title
-  `,
-      [userId]
+  ORDER BY twa.title`,
+      [userId],
     );
 
     const recurringTasks = recurringTasksResult.rows;
-    console.log('recurringTasksResult.rows:', recurringTasksResult.rows)
+    //console.log('recurringTasksResult.rows:', recurringTasksResult.rows)
 
     response.json({ recurringTasks });
-
   } catch (error) {
     console.error(error);
     response.status(500).json({ error: 'Kunde inte hämta veckans tasks' });
   }
 });
 
-
 //POST Veckoschema
 app.post('/api/week-tasks', authenticate, async (request, response) => {
   console.log('Request body:', request.body);
   try {
-    const { title, description, recurring_weekdays, family_member_ids, category_id } = request.body;
+    const {
+      title,
+      description,
+      recurring_weekdays,
+      family_member_ids,
+      category_id,
+    } = request.body;
     const userId = (request as UserRequest).user?.id;
 
     // Kontrollera att family_member_ids tillhör användaren
     if (family_member_ids && family_member_ids.length > 0) {
       const checkFamilyMembers = await client.query(
         `SELECT id FROM family_members WHERE id = ANY($1) AND user_id = $2`,
-        [family_member_ids, userId]
+        [family_member_ids, userId],
       );
 
       if (checkFamilyMembers.rows.length !== family_member_ids.length) {
-        return response.status(403).json({ error: 'En eller flera familjemedlemmar tillhör inte dig' });
+        response.status(403).json({
+          error: 'Familjemedlem tillhör inte din användare',
+        });
+        return;
       }
     }
 
     // Lägg till raden i tasks
     const insertTaskResult = await client.query(
       `INSERT INTO tasks (title, description, user_id, category_id) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [title, description, userId, category_id]
+      [title, description, userId, category_id],
     );
     const newTask = insertTaskResult.rows[0];
 
@@ -721,18 +757,20 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
       for (const familyMemberId of family_member_ids) {
         await client.query(
           `INSERT INTO task_family_members (task_id, family_member_id) VALUES ($1, $2)`,
-          [newTask.id, familyMemberId]
+          [newTask.id, familyMemberId],
         );
       }
     }
 
     // Lägg till kopplingar i task_weekdays (för recurring)
     if (Array.isArray(recurring_weekdays) && recurring_weekdays.length > 0) {
-      const filteredWeekdays = recurring_weekdays.filter(day => day !== null && day !== undefined);
+      const filteredWeekdays = recurring_weekdays.filter(
+        (day) => day !== null && day !== undefined,
+      );
       for (const weekday of filteredWeekdays) {
         await client.query(
           `INSERT INTO task_weekdays (task_id, weekday) VALUES ($1, $2)`,
-          [newTask.id, weekday]
+          [newTask.id, weekday],
         );
       }
     }
@@ -740,47 +778,59 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
     // Hämta tillbaka sparade family_member_ids ur task_family_members
     const familyMembersResult = await client.query(
       `SELECT family_member_id FROM task_family_members WHERE task_id = $1`,
-      [newTask.id]
+      [newTask.id],
     );
-    const family_member_ids_from_db = familyMembersResult.rows.map(row => row.family_member_id);
+
+    const family_member_ids_from_db = familyMembersResult.rows.map(
+      (row) => row.family_member_id,
+    );
 
     // Hämta tillbaka sparade recurring_weekdays ur task_weekdays
     const recurringWeekdaysResult = await client.query(
       `SELECT weekday FROM task_weekdays WHERE task_id = $1`,
-      [newTask.id]
+      [newTask.id],
     );
-    const recurring_weekdays_from_db = recurringWeekdaysResult.rows.map(row => row.weekday);
+    const recurring_weekdays_from_db = recurringWeekdaysResult.rows.map(
+      (row) => row.weekday,
+    );
 
     // Hämta kategoriinfo
     const categoryInfoResult = await client.query(
-      `
-      SELECT
+      `SELECT
         c.name  AS category_name,
         c.color AS category_color,
         c.icon  AS category_icon
       FROM categories c
-      WHERE c.id = $1
-      `,
-      [newTask.category_id]
+      WHERE c.id = $1`,
+      [newTask.category_id],
     );
-    const categoryRow = categoryInfoResult.rows[0] || { category_name: null, category_color: null, category_icon: null };
+
+    const categoryRow = categoryInfoResult.rows[0] || {
+      category_name: null,
+      category_color: null,
+      category_icon: null,
+    };
 
     // Hämta family_members-array
-    let fullFamilyMembers: { id: number; name: string; role: string; profile_image: string }[] = [];
+    let fullFamilyMembers: {
+      id: number;
+      name: string;
+      role: string;
+      profile_image: string;
+    }[] = [];
     if (family_member_ids_from_db.length > 0) {
       const fullMembersResult = await client.query(
-        `
-        SELECT
+        `SELECT
           fm.id,
           fm.name,
           fm.role,
           fm.profile_image
         FROM task_family_members tfm
         JOIN family_members fm ON fm.id = tfm.family_member_id
-        WHERE tfm.task_id = $1
-        `,
-        [newTask.id]
+        WHERE tfm.task_id = $1`,
+        [newTask.id],
       );
+
       fullFamilyMembers = fullMembersResult.rows;
     }
 
@@ -792,21 +842,19 @@ app.post('/api/week-tasks', authenticate, async (request, response) => {
       category_name: categoryRow.category_name,
       category_color: categoryRow.category_color,
       category_icon: categoryRow.category_icon,
-      family_members: fullFamilyMembers
+      family_members: fullFamilyMembers,
     };
 
-    console.log('recurring_weekdays:', recurring_weekdays);
-    console.log('family_member_ids:', family_member_ids);
-    console.log('completeTask', completeTask);
+    //console.log('recurring_weekdays:', recurring_weekdays);
+    //console.log('family_member_ids:', family_member_ids);
+    //console.log('completeTask', completeTask);
 
     response.status(201).json(completeTask);
-
   } catch (error) {
     console.error('Fel vid skapande av veckouppgift:', error);
     response.status(500).json({ error: 'Kunde inte skapa veckouppgift' });
   }
 });
-
 
 // PUT veckoschema
 app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
@@ -815,17 +863,25 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
   // Hämta inloggad användares id från request (från autentisering)
   const userId = (request as UserRequest).user?.id;
   // Hämta data som ska uppdateras från request body
-  const { title, description, completed, family_member_ids, recurring_weekdays, category_id } = request.body;
+  const {
+    title,
+    description,
+    completed,
+    family_member_ids,
+    recurring_weekdays,
+    category_id,
+  } = request.body;
 
   try {
     // Kontrollera att uppgiften finns
     const checkResult = await client.query(
-      `SELECT * FROM tasks WHERE id = $1`,
-      [taskId]
+      `SELECT * FROM tasks WHERE id = $1 AND user_id = $2`,
+      [taskId, userId],
     );
 
     if (checkResult.rows.length === 0) {
-      return response.status(404).json({ error: 'Uppgift hittades inte' });
+      response.status(404).json({ error: 'Uppgift hittades inte' });
+      return;
     }
 
     // Uppdatera uppgiften
@@ -841,22 +897,21 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
         description,
         completed === undefined ? false : completed,
         category_id,
-        taskId
-      ]
+        taskId,
+      ],
     );
 
     // Uppdatera kopplingar i task_weekdays
     if (Array.isArray(recurring_weekdays)) {
       // Ta bort gamla kopplingar
-      await client.query(
-        `DELETE FROM task_weekdays WHERE task_id = $1`,
-        [taskId]
-      );
+      await client.query(`DELETE FROM task_weekdays WHERE task_id = $1`, [
+        taskId,
+      ]);
       // Lägg till nya veckodagar
       for (const weekday of recurring_weekdays) {
         await client.query(
           `INSERT INTO task_weekdays (task_id, weekday) VALUES ($1, $2)`,
-          [taskId, weekday]
+          [taskId, weekday],
         );
       }
     }
@@ -864,21 +919,19 @@ app.put('/api/week-tasks/:id', authenticate, async (request, response) => {
     // Uppdatera kopplingar i task_family_members
     if (Array.isArray(family_member_ids)) {
       // Radera gamla kopplingar först
-      await client.query(
-        `DELETE FROM task_family_members WHERE task_id = $1`,
-        [taskId]
-      );
+      await client.query(`DELETE FROM task_family_members WHERE task_id = $1`, [
+        taskId,
+      ]);
       // Lägg till nya kopplingar
       for (const familyMemberId of family_member_ids) {
         await client.query(
           `INSERT INTO task_family_members (task_id, family_member_id) VALUES ($1, $2)`,
-          [taskId, familyMemberId]
+          [taskId, familyMemberId],
         );
       }
     }
 
     response.status(200).json({ message: 'Uppgift uppdaterad' });
-
   } catch (error) {
     console.error('Fel vid uppdatering av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte uppdatera uppgift' });
@@ -894,47 +947,42 @@ app.delete('/api/week-tasks/:id', authenticate, async (request, response) => {
     // Kontrollera att uppgiften tillhör användaren
     const checkTaskResult = await client.query(
       `SELECT * FROM tasks WHERE id = $1 AND user_id = $2`,
-      [taskId, userId]
+      [taskId, userId],
     );
 
     if (checkTaskResult.rows.length === 0) {
-      return response.status(404).json({ error: 'Uppgift hittades inte eller tillhör inte dig' });
+      response.status(404).json({
+        error: 'Uppgift hittades inte eller tillhör inte dig',
+      });
+      return;
     }
 
     // Ta bort uppgiften (kopplingstabeller rensas automatiskt via ON DELETE CASCADE)
-    await client.query(
-      `DELETE FROM tasks WHERE id = $1`,
-      [taskId]
-    );
+    await client.query(`DELETE FROM tasks WHERE id = $1`, [taskId]);
 
     response.json({ message: 'Uppgift raderad' });
-
   } catch (error) {
     console.error('Fel vid radering av uppgift:', error);
     response.status(500).json({ error: 'Kunde inte radera uppgiften' });
   }
 });
 
+// Fix för att dropdownmenyn visar äö fel.
+function fixName(n: string): string {
+  return n.replace('„', 'ä').replace('™', 'ö');
+}
 
-// GET kategorier 
+// GET kategorier
 app.get('/api/categories', async (_request, response) => {
   try {
-
     const result = await client.query(
-      `SELECT id, name, color, icon FROM categories ORDER BY name`
+      `SELECT id, name, color, icon FROM categories ORDER BY name`,
     );
-    console.log('Kategorier från get categories:', result.rows);
+    //console.log('Kategorier från get categories:', result.rows);
 
-    // Fix för att dropdownmenyn visar åäö fel. 
-    function fixName(n: string): string {
-      return n
-        .replace('„', 'ä')
-        .replace('™', 'ö');
-    }
-
-    const fixedCategories = result.rows.map(row => ({
+    const fixedCategories = result.rows.map((row) => ({
       ...row,
-      name: fixName(row.name)
+      name: fixName(row.name),
     }));
 
     response.json(fixedCategories);
@@ -944,17 +992,13 @@ app.get('/api/categories', async (_request, response) => {
   }
 });
 
-
-
 // Servera frontend från dist-mappen
-app.use(express.static(path.join(path.resolve(), 'dist')))
+app.use(express.static(path.join(path.resolve(), 'dist')));
 
 // Fallback-route för SPA-routing, skicka alltid index.html
-app.get('*', (request, response) => {
+app.get('*', (_request, response) => {
   response.sendFile(path.join(path.resolve(), 'dist', 'index.html'));
 });
-
-console.log('Använder databas-connection-string:', process.env.PGURI);
 
 app.listen(port, () => {
   console.log(`Servern körs på http://localhost:${port}`);

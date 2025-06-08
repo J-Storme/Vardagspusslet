@@ -57,11 +57,11 @@ export const AppContainer = styled.div`
   flex-direction: column;
   /*background-color: rgb(139, 203, 255);*/
   background: linear-gradient(
-  135deg,
-  rgb(210, 212, 253), 
-  rgb(166, 167, 218), 
-  rgb(90, 92, 160)    
-);
+    135deg,
+    rgb(210, 212, 253),
+    rgb(166, 167, 218),
+    rgb(90, 92, 160)
+  );
 `;
 
 export default GlobalStyles;

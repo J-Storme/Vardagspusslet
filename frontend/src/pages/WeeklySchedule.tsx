@@ -35,18 +35,21 @@ function WeeklySchedule() {
   // states
   const [tasks, setTasks] = useState<Task[]>([]);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
-  const [selectedFamilyMemberIdForFilter, setSelectedFamilyMemberIdForFilter] = useState<number | 'all'>('all');
+  const [selectedFamilyMemberIdForFilter, setSelectedFamilyMemberIdForFilter] =
+    useState<number | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryForFilter, setSelectedCategoryForFilter] = useState<string>('all');
+  const [selectedCategoryForFilter, setSelectedCategoryForFilter] =
+    useState<string>('all');
   const [isAddingTask, setIsAddingTask] = useState(false); // Lägg till så att lägga-till-formuläret visas ej från början
-
 
   // State för nya uppgifter från formulär
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newSelectedFamilyMemberIds, setNewSelectedFamilyMemberIds] = useState<number[]>([]);
+  const [newSelectedFamilyMemberIds, setNewSelectedFamilyMemberIds] = useState<
+    number[]
+  >([]);
   const [newRecurringWeekday, setNewRecurringWeekday] = useState<number[]>([]);
   const [newCategoryId, setNewCategoryId] = useState<number | null>(null);
 
@@ -62,12 +65,11 @@ function WeeklySchedule() {
 
   const token = localStorage.getItem('token');
 
-
   // Hämta tasks
   function fetchTasks() {
     return fetch('http://localhost:8080/api/week-tasks', {
       headers: { Authorization: `Bearer ${token}` },
-    }).then(response => {
+    }).then((response) => {
       console.log('fetchTasks status:', response.status);
       if (!response.ok) {
         throw new Error('Något gick fel vid hämtning av uppgifter');
@@ -80,7 +82,7 @@ function WeeklySchedule() {
   function fetchFamilyMembers() {
     return fetch('http://localhost:8080/api/family-members', {
       headers: { Authorization: `Bearer ${token}` },
-    }).then(response => {
+    }).then((response) => {
       console.log('fetchFamilyMembers status:', response.status);
       if (!response.ok) {
         throw new Error('Något gick fel vid hämtning av familjemedlemmar');
@@ -93,7 +95,7 @@ function WeeklySchedule() {
   function fetchCategories() {
     return fetch('http://localhost:8080/api/categories', {
       headers: { Authorization: `Bearer ${token}` },
-    }).then(response => {
+    }).then((response) => {
       console.log('fetchCategories status:', response.status);
       if (!response.ok) {
         throw new Error('Kunde inte hämta kategorier');
@@ -120,22 +122,21 @@ function WeeklySchedule() {
         if (Array.isArray(tasksData.recurringTasks)) {
           setTasks(tasksData.recurringTasks);
         } else {
-          console.warn('recurringTasks är inte en array:', tasksData.recurringTasks);
+          console.warn(
+            'recurringTasks är inte en array:',
+            tasksData.recurringTasks,
+          );
         }
         setFamilyMembers(familyMembersData);
         setCategories(categoriesData);
         setLoading(false);
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error);
         setError('Kunde inte hämta data från servern');
         setLoading(false);
       });
   }, [token]);
-
-
-
-
 
   // POST Lägg till ny uppgift
   function addTask() {
@@ -160,7 +161,7 @@ function WeeklySchedule() {
       family_member_ids: newSelectedFamilyMemberIds,
       recurring: true,
       recurring_weekdays: newRecurringWeekday,
-      category_id: newCategoryId
+      category_id: newCategoryId,
     };
 
     //console.log('Skickar ny uppgift med family_member_ids:', newSelectedFamilyMemberIds);
@@ -174,22 +175,22 @@ function WeeklySchedule() {
       },
       body: JSON.stringify(newTaskToAdd),
     })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error('Misslyckades med att lägga till uppgift');
         }
         return response.json();
       })
-      .then(addedTask => {
+      .then((addedTask) => {
         console.log('Ny uppgift från server:', addedTask);
         // Lägger till uppgiften i arrayen, previous hämtar föregående värde av Tasks state innan uppdatering
-        setTasks(previous => {
+        setTasks((previous) => {
           // Om previous är en array, använd den, annars tom array
           const safePrev = Array.isArray(previous) ? previous : [];
           return [...safePrev, addedTask];
         });
 
-        console.log("Data som skickas till backend:", newTaskToAdd);
+        console.log('Data som skickas till backend:', newTaskToAdd);
 
         // Nollställ formulärfält
         setNewTitle('');
@@ -199,13 +200,11 @@ function WeeklySchedule() {
         setNewRecurringWeekday([]);
         setIsAddingTask(false); // Stänger formuläret för att skapa uppgift
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error);
         alert('Något gick fel när uppgiften skulle sparas');
       });
   }
-
-
 
   // DELETE Funktion för att radera uppgift
   function deleteTask(taskId: number) {
@@ -219,13 +218,13 @@ function WeeklySchedule() {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error('Misslyckades med att radera uppgift');
         }
-        setTasks(prev => prev.filter(task => task.id !== taskId));
+        setTasks((prev) => prev.filter((task) => task.id !== taskId));
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error);
         alert('Något gick fel när uppgiften skulle raderas');
       });
@@ -235,26 +234,31 @@ function WeeklySchedule() {
   const safeTasks = Array.isArray(tasks) ? tasks : [];
   console.log('Original tasks:', safeTasks);
 
-  const filteredTasks = safeTasks.filter(task => {
-    const isRecurring = Array.isArray(task.recurring_weekdays) && task.recurring_weekdays.length > 0;
+  const filteredTasks = safeTasks.filter((task) => {
+    const isRecurring =
+      Array.isArray(task.recurring_weekdays) &&
+      task.recurring_weekdays.length > 0;
 
     if (!isRecurring) {
       return false; // Endast uppgifter med återkommande veckodagar visas
     }
 
     // Kontrollera familjemedlemsfilter
-    const matchesFamilyMember = selectedFamilyMemberIdForFilter === 'all' ||
-      (Array.isArray(task.family_members) && task.family_members.some(member => member.id === selectedFamilyMemberIdForFilter));
-
+    const matchesFamilyMember =
+      selectedFamilyMemberIdForFilter === 'all' ||
+      (Array.isArray(task.family_members) &&
+        task.family_members.some(
+          (member) => member.id === selectedFamilyMemberIdForFilter,
+        ));
 
     // Kontrollera kategori-filter
-    const matchesCategory = selectedCategoryForFilter === 'all'
-      || (task.category_name && task.category_name === selectedCategoryForFilter);
+    const matchesCategory =
+      selectedCategoryForFilter === 'all' ||
+      (task.category_name && task.category_name === selectedCategoryForFilter);
 
     // Båda filter måste stämma för att visa uppgiften
     return matchesFamilyMember && matchesCategory;
   });
-
 
   /*
   const filteredTasks = safeTasks.filter(task => {
@@ -269,18 +273,16 @@ function WeeklySchedule() {
 
   console.log('Filtered tasks:', filteredTasks);
 
-
   if (loading) return <p>Laddar uppgifter...</p>;
   if (error) return <p>{error}</p>;
 
-
-
-  function getFamilyMemberNamesFromObjects(familyMembersObjects: { id: number; name: string }[]): string {
+  function getFamilyMemberNamesFromObjects(
+    familyMembersObjects: { id: number; name: string }[],
+  ): string {
     if (!Array.isArray(familyMembersObjects)) return '';
-    const names = familyMembersObjects.map(member => member.name);
+    const names = familyMembersObjects.map((member) => member.name);
     return names.join(', ');
   }
-
 
   // PUT, uppdatera checkbox
   function toggleTaskCompleted(task: Task) {
@@ -304,7 +306,7 @@ function WeeklySchedule() {
       },
       body: JSON.stringify(updatedTask),
     })
-      .then(response => {
+      .then((response) => {
         if (!response.ok) {
           throw new Error('Kunde inte uppdatera uppgiften');
         }
@@ -312,40 +314,43 @@ function WeeklySchedule() {
       })
       .then(() => {
         // Uppdatera lokalt tillstånd
-        setTasks(previousTasks =>
-          previousTasks.map(t =>
-            t.id === task.id ? { ...t, completed: updatedTask.completed } : t
-          )
+        setTasks((previousTasks) =>
+          previousTasks.map((t) =>
+            t.id === task.id ? { ...t, completed: updatedTask.completed } : t,
+          ),
         );
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Fel vid PUT:', error);
       });
   }
 
   const testFilteredTasks = filteredTasks;
 
-
   return (
     <Container>
       {loading && <p>Laddar...</p>}
-      {error && <p >{error}</p>}
+      {error && <p>{error}</p>}
 
       <FormContainer>
         {!loading && !error && (
           <>
-
             {isAddingTask && (
               <Form>
                 <h3>Lägg till ny uppgift</h3>
-                <CancelButton type="button" onClick={() => setIsAddingTask(false)}>x</CancelButton>
+                <CancelButton
+                  type="button"
+                  onClick={() => setIsAddingTask(false)}
+                >
+                  x
+                </CancelButton>
 
                 <label>
                   Titel: <br />
                   <input
                     type="text"
                     value={newTitle}
-                    onChange={event => setNewTitle(event.target.value)}
+                    onChange={(event) => setNewTitle(event.target.value)}
                   />
                 </label>
                 <br />
@@ -354,14 +359,22 @@ function WeeklySchedule() {
                   Beskrivning: <br />
                   <textarea
                     value={newDescription}
-                    onChange={event => setNewDescription(event.target.value)}
+                    onChange={(event) => setNewDescription(event.target.value)}
                   />
                 </label>
                 <br />
 
                 <StyledFieldset>
                   <legend>Lägg till i veckoschema:</legend>
-                  {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
+                  {[
+                    'måndag',
+                    'tisdag',
+                    'onsdag',
+                    'torsdag',
+                    'fredag',
+                    'lördag',
+                    'söndag',
+                  ].map((day) => {
                     const dayNumber = weekdayMap[day];
 
                     return (
@@ -370,7 +383,7 @@ function WeeklySchedule() {
                           type="checkbox"
                           value={dayNumber.toString()}
                           checked={newRecurringWeekday.includes(dayNumber)}
-                          onChange={event => {
+                          onChange={(event) => {
                             const checked = event.target.checked;
                             const value = Number(event.target.value);
 
@@ -379,7 +392,7 @@ function WeeklySchedule() {
                             }
 
                             if (checked) {
-                              setNewRecurringWeekday(prev => {
+                              setNewRecurringWeekday((prev) => {
                                 // Undvik duplicering
                                 if (!prev.includes(value)) {
                                   return [...prev, value];
@@ -387,7 +400,9 @@ function WeeklySchedule() {
                                 return prev;
                               });
                             } else {
-                              setNewRecurringWeekday(prev => prev.filter(d => d !== value));
+                              setNewRecurringWeekday((prev) =>
+                                prev.filter((d) => d !== value),
+                              );
                             }
                           }}
                         />
@@ -399,17 +414,22 @@ function WeeklySchedule() {
 
                 <StyledFieldset>
                   <legend>Koppla till familjemedlem (valfritt):</legend>
-                  {familyMembers.map(member => (
+                  {familyMembers.map((member) => (
                     <label key={member.id} style={{ marginRight: '10px' }}>
                       <input
                         type="checkbox"
                         checked={newSelectedFamilyMemberIds.includes(member.id)}
-                        onChange={event => {
+                        onChange={(event) => {
                           const isChecked = event.target.checked;
                           if (isChecked) {
-                            setNewSelectedFamilyMemberIds(prev => [...prev, member.id]);
+                            setNewSelectedFamilyMemberIds((prev) => [
+                              ...prev,
+                              member.id,
+                            ]);
                           } else {
-                            setNewSelectedFamilyMemberIds(prev => prev.filter(id => id !== member.id));
+                            setNewSelectedFamilyMemberIds((prev) =>
+                              prev.filter((id) => id !== member.id),
+                            );
                           }
                         }}
                       />
@@ -423,13 +443,13 @@ function WeeklySchedule() {
                     Kategori: <br />
                     <select
                       value={newCategoryId ?? ''}
-                      onChange={event => {
+                      onChange={(event) => {
                         const val = event.target.value;
                         setNewCategoryId(val !== '' ? Number(val) : null);
                       }}
                     >
                       <option value="">Ingen kategori</option>
-                      {categories.map(category => (
+                      {categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
                         </option>
@@ -439,8 +459,9 @@ function WeeklySchedule() {
                   <br />
                 </StyledFieldset>
 
-
-                <SubmitButton type="button" onClick={addTask}>Lägg till uppgift</SubmitButton>
+                <SubmitButton type="button" onClick={addTask}>
+                  Lägg till uppgift
+                </SubmitButton>
               </Form>
             )}
           </>
@@ -454,7 +475,7 @@ function WeeklySchedule() {
           <label>Filtrera på familjemedlem: </label>
           <select
             value={selectedFamilyMemberIdForFilter}
-            onChange={event => {
+            onChange={(event) => {
               const value = event.target.value;
               if (value === 'all') {
                 setSelectedFamilyMemberIdForFilter('all');
@@ -464,8 +485,10 @@ function WeeklySchedule() {
             }}
           >
             <option value="all">Alla familjemedlemmar</option>
-            {familyMembers.map(member => (
-              <option key={member.id} value={member.id}>{member.name}</option>
+            {familyMembers.map((member) => (
+              <option key={member.id} value={member.id}>
+                {member.name}
+              </option>
             ))}
           </select>
         </div>
@@ -474,11 +497,15 @@ function WeeklySchedule() {
           <label>Filtrera på kategori: </label>
           <select
             value={selectedCategoryForFilter}
-            onChange={event => setSelectedCategoryForFilter(event.target.value)}
+            onChange={(event) =>
+              setSelectedCategoryForFilter(event.target.value)
+            }
           >
             <option value="all">Alla kategorier</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.name}>{category.name}</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.name}>
+                {category.name}
+              </option>
             ))}
           </select>
         </div>
@@ -486,20 +513,31 @@ function WeeklySchedule() {
 
       <WeeklyScheduleContainer>
         <WeekGrid>
-          {['måndag', 'tisdag', 'onsdag', 'torsdag', 'fredag', 'lördag', 'söndag'].map(day => {
-            const tasksForDay = testFilteredTasks.filter(task =>
-              Array.isArray(task.recurring_weekdays) &&
-              task.recurring_weekdays.map(Number).includes(weekdayMap[day])
+          {[
+            'måndag',
+            'tisdag',
+            'onsdag',
+            'torsdag',
+            'fredag',
+            'lördag',
+            'söndag',
+          ].map((day) => {
+            const tasksForDay = testFilteredTasks.filter(
+              (task) =>
+                Array.isArray(task.recurring_weekdays) &&
+                task.recurring_weekdays.map(Number).includes(weekdayMap[day]),
             );
 
             console.log(`Tasks for ${day}:`, tasksForDay);
 
             return (
               <DayColumn key={day}>
-                <DayTitle>{day.charAt(0).toUpperCase() + day.slice(1)}</DayTitle>
+                <DayTitle>
+                  {day.charAt(0).toUpperCase() + day.slice(1)}
+                </DayTitle>
                 {tasksForDay.length > 0 ? (
                   <ul>
-                    {tasksForDay.map(task => {
+                    {tasksForDay.map((task) => {
                       // Om ingen kategori finns, fallback till ljusgrå
                       const categoryColor = task.category_color ?? '#ccc';
 
@@ -511,19 +549,32 @@ function WeeklySchedule() {
                           $categoryColor={categoryColor}
                         >
                           <BoxContainers>
-                            <CheckboxStyled><input type="checkbox" checked={task.completed} onChange={() => toggleTaskCompleted(task)} /></CheckboxStyled>
-                            <DeleteButton onClick={() => deleteTask(task.id)}>x</DeleteButton>
+                            <CheckboxStyled>
+                              <input
+                                type="checkbox"
+                                checked={task.completed}
+                                onChange={() => toggleTaskCompleted(task)}
+                              />
+                            </CheckboxStyled>
+                            <DeleteButton onClick={() => deleteTask(task.id)}>
+                              x
+                            </DeleteButton>
                           </BoxContainers>
-                          <TaskTitle $completed={task.completed}>{task.title}</TaskTitle>
-                          {task.description && <Description>{task.description}</Description>}
-
-                          {task.family_members && task.family_members.length > 0 && (
-                            <FamilyMembers>
-                              {getFamilyMemberNamesFromObjects(task.family_members)}
-                            </FamilyMembers>
+                          <TaskTitle $completed={task.completed}>
+                            {task.title}
+                          </TaskTitle>
+                          {task.description && (
+                            <Description>{task.description}</Description>
                           )}
 
-
+                          {task.family_members &&
+                            task.family_members.length > 0 && (
+                              <FamilyMembers>
+                                {getFamilyMemberNamesFromObjects(
+                                  task.family_members,
+                                )}
+                              </FamilyMembers>
+                            )}
                         </RecurringTaskItem>
                       );
                     })}
@@ -535,7 +586,6 @@ function WeeklySchedule() {
             );
           })}
         </WeekGrid>
-
       </WeeklyScheduleContainer>
 
       {!isAddingTask && (
@@ -543,8 +593,7 @@ function WeeklySchedule() {
           Lägg till ny uppgift
         </SubmitButton>
       )}
-
-    </Container >
+    </Container>
   );
 }
 
@@ -559,29 +608,29 @@ const Container = styled.div`
 
 const Filter = styled.div`
   display: flex;
-  justify-content: flex-end;  
+  justify-content: flex-end;
   gap: 1rem;
   text-align: flex-end;
-  margin-top: 20px;  
+  margin-top: 20px;
   padding: 1px;
   gap: 1rem;
 
   label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;           
+    gap: 0.5rem;
     font-family: Arial, sans-serif;
     font-size: 0.9rem;
   }
 
   select {
-  background-color: rgb(235, 206, 235);
-  width: 195px;
-  border-radius: 8px;
-  border: rgb(148, 130, 148);
-  box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.2);
+    background-color: rgb(235, 206, 235);
+    width: 195px;
+    border-radius: 8px;
+    border: rgb(148, 130, 148);
+    box-shadow: 1px 2px 10px rgba(0, 0, 0, 0.2);
   }
-  `;
+`;
 
 const FormContainer = styled.div`
   max-width: 700px;
@@ -592,7 +641,7 @@ const FormContainer = styled.div`
 const Form = styled.div`
   margin-top: 1rem;
   margin-bottom: 2rem;
-  padding: 1rem;  
+  padding: 1rem;
   border: none;
   border: 1px solid #ccc;
   margin: 1em 0;
@@ -603,7 +652,7 @@ const Form = styled.div`
 `;
 
 const Title = styled.h3`
-  text-align: center;  
+  text-align: center;
   font-size: 28px;
   font-family: 'Montserrat', Arial, sans-serif;
 `;
@@ -617,7 +666,7 @@ const WeeklyScheduleContainer = styled.div`
 
 const WeekGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(7, 1fr); 
+  grid-template-columns: repeat(7, 1fr);
   gap: 0.2rem;
   margin-top: 1rem;
 `;
@@ -640,13 +689,17 @@ const DayTitle = styled.h4`
   margin-bottom: 0.5rem;
 `;
 
-const RecurringTaskItem = styled.li<{ $completed: boolean; $categoryColor: string }>`
+const RecurringTaskItem = styled.li<{
+  $completed: boolean;
+  $categoryColor: string;
+}>`
   border: 1px solid #ccc;
   padding: 0.75rem;
   margin-bottom: 0.3rem;
   border-radius: 8px;
-  background-color: ${props => (props.$completed ? '#ddd' : props.$categoryColor)};
-  color: ${props => (props.$completed ? '#666' : '#000')};
+  background-color: ${(props) =>
+    props.$completed ? '#ddd' : props.$categoryColor};
+  color: ${(props) => (props.$completed ? '#666' : '#000')};
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   list-style: none;
   font-size: 0.9rem;
@@ -654,21 +707,21 @@ const RecurringTaskItem = styled.li<{ $completed: boolean; $categoryColor: strin
 `;
 
 const BoxContainers = styled.div`
-  display: flex; 
+  display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  `;
+`;
 
 const TaskTitle = styled.span<{ $completed: boolean }>`
-  display: flex; 
+  display: flex;
   justify-content: flex-start;
-  word-break: break-word;     
-  white-space: normal; 
+  word-break: break-word;
+  white-space: normal;
   font-weight: bold;
-  font-size: 14px;    
+  font-size: 14px;
   font-family: 'Indie Flower', Arial, sans-serif;
-  text-decoration: ${props => (props.$completed ? 'line-through' : 'none')};
+  text-decoration: ${(props) => (props.$completed ? 'line-through' : 'none')};
   margin-top: 0.4rem;
 `;
 
@@ -679,7 +732,7 @@ const CheckboxStyled = styled.div`
   input[type='checkbox'] {
     width: 16px;
     height: 16px;
-    accent-color: rgb(117, 119, 212); 
+    accent-color: rgb(117, 119, 212);
     cursor: pointer;
   }
 `;
@@ -690,35 +743,35 @@ const Description = styled.div`
 `;
 
 const FamilyMembers = styled.div`
-  display: flex; 
+  display: flex;
   justify-content: flex-end;
   margin-top: 0.5rem;
   color: #333;
-  Font-style: arial;
+  font-style: arial;
   font-size: 11px;
 `;
 
 const StyledFieldset = styled.fieldset`
-  border: none; 
+  border: none;
   padding: 0;
   margin: 1rem 0;
 `;
 
 const DeleteButton = styled.button`
-display: flex; 
-justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
 
-background:rgb(116, 112, 111);
-color: rgb(255, 255, 255);
-font-size: 10px;
-cursor: pointer;
-padding: 0.13rem .4rem;
-border: 1px;
-border-radius: 6px;
+  background: rgb(116, 112, 111);
+  color: rgb(255, 255, 255);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0.13rem 0.4rem;
+  border: 1px;
+  border-radius: 6px;
 
   &:hover {
-  background: rgb(189, 11, 11);
-}
+    background: rgb(189, 11, 11);
+  }
 `;
 
 const SubmitButton = styled.button`
@@ -732,9 +785,9 @@ const SubmitButton = styled.button`
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  
+
   &:hover {
-    background-color:rgb(115, 221, 120);
+    background-color: rgb(115, 221, 120);
   }
 `;
 
@@ -749,8 +802,8 @@ const CancelButton = styled.button`
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  
+
   &:hover {
-    background-color:rgb(115, 221, 120);
+    background-color: rgb(115, 221, 120);
   }
 `;

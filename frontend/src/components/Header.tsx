@@ -1,13 +1,13 @@
 import styled from 'styled-components';
 import { useLogin } from '../context/LoginContext';
-import { Link } from 'react-router-dom';
 
 function Header() {
   const { isLoggedIn, userName } = useLogin();
 
   return (
     <HeaderContainer>
-      <LogoContainer><h1>Vardagspusslet</h1>
+      <LogoContainer>
+        <h1>Vardagspusslet</h1>
         <img src="/logo.png" alt="logo" />
       </LogoContainer>
       {isLoggedIn && <WelcomeText>Hushåll {userName}!</WelcomeText>}
@@ -26,23 +26,24 @@ export const HeaderContainer = styled.header`
   align-items: center;
   justify-content: center;
   position: relative;
-  padding: 24px 0;  
+  padding: 24px 0;
 
-  h1 {font-size: 36px;
+  h1 {
+    font-size: 36px;
   }
 `;
 
 export const LogoContainer = styled.div`
   display: flex;
-  align-items: center;  
+  align-items: center;
   gap: 2px;
   margin: 0;
 
   h1 {
-  font-size: 36px;
-  font-family: 'Indie Flower', Arial, sans-serif;
+    font-size: 36px;
+    font-family: 'Indie Flower', Arial, sans-serif;
   }
-  
+
   img {
     height: 60px;
   }
@@ -53,5 +54,5 @@ const WelcomeText = styled.p`
   right: 10px;
   top: 50%;
   font-family: 'Indie Flower', Arial, sans-serif;
-  transform: translateY(-50%);  
+  transform: translateY(-50%);
 `;

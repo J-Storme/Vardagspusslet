@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useLogin } from '../context/LoginContext';
@@ -7,15 +7,8 @@ function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [editName, setEditName] = useState('');
-  const [message, setMessage] = useState('');
   const navigate = useNavigate();
   const { login } = useLogin();
-
-  useEffect(() => {
-    const storedName = localStorage.getItem('userName') || '';
-    setEditName(storedName);
-  }, []);
 
   const handleLogin = async () => {
     if (!email && !password) {
@@ -46,7 +39,6 @@ function Login() {
       // Logg ain och skicka vidare till sidan Home
       login(data.token, data.email, data.name, data.id);
       navigate('/');
-
     } catch (error) {
       console.error('Inloggningsfel:', error);
       setError('Något gick fel vid inloggning');
@@ -58,37 +50,6 @@ function Login() {
     navigate('/register');
   };
 
-  // spara uppdaterade namn/adress
-  const handleSave = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-      const response = await fetch('http://localhost:8080/update-user', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: editName }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setMessage(data.error || 'Misslyckades med att spara');
-      } else {
-        localStorage.setItem('userName', editName);
-        setMessage('Profil uppdaterad!');
-      }
-
-    } catch (error) {
-      console.error('Fel vid uppdatering:', error);
-      setMessage('Något gick fel');
-    }
-  };
-
-  const token = localStorage.getItem('token');
 
   return (
     <LoginContainer>
@@ -111,7 +72,6 @@ function Login() {
         <p>Har du inget konto?</p>
         <button onClick={handleRegisterRedirect}>Registrera dig</button>
       </div>
-
     </LoginContainer>
   );
 }

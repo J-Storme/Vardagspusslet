@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import GlobalStyles, { AppContainer } from './styles/GlobalStyles';
 import Header from './components/Header';
@@ -11,15 +11,17 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import WeeklySchedule from './pages/WeeklySchedule';
 
-
-
 function App() {
   useEffect(() => {
     fetch('/api')
       .then((response) => response.json())
       .then((result) => {
+        console.log('API svarar:', result);
       })
-  }, [])
+      .catch((error) => {
+        console.error('Kunde inte nå API:', error);
+      });
+  }, []);
 
   return (
     <>
@@ -44,4 +46,4 @@ function App() {
   );
 }
 
-export default App
+export default App;

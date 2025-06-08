@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { useLogin } from '../context/LoginContext';
 
 interface FamilyMember {
   id: number;
@@ -26,7 +25,6 @@ const Account = () => {
     }
   }, []);
 
-
   useEffect(() => {
     if (!token) return;
 
@@ -35,8 +33,8 @@ const Account = () => {
       try {
         const response = await fetch('/api/family-members', {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (!response.ok) {
@@ -61,13 +59,13 @@ const Account = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': token || ''
+          Authorization: token || '',
         },
         body: JSON.stringify({
           name: newName.trim(),
           role: newRole.trim(),
-          profile_image: null
-        })
+          profile_image: null,
+        }),
       });
 
       if (!response.ok) {
@@ -93,8 +91,10 @@ const Account = () => {
     if (editId === null) return;
     setMembers(
       members.map((m) =>
-        m.id === editId ? { ...m, name: editName.trim(), role: editRole.trim() } : m
-      )
+        m.id === editId
+          ? { ...m, name: editName.trim(), role: editRole.trim() }
+          : m,
+      ),
     );
     cancelEdit();
   };
@@ -106,14 +106,15 @@ const Account = () => {
   };
 
   const deleteMember = async (id: number) => {
-    if (!window.confirm('Vill du verkligen ta bort denna familjemedlem?')) return;
+    if (!window.confirm('Vill du verkligen ta bort denna familjemedlem?'))
+      return;
 
     try {
       const response = await fetch(`/api/family-members/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': token || ''
-        }
+          Authorization: token || '',
+        },
       });
 
       if (!response.ok) {
@@ -175,7 +176,7 @@ const Account = () => {
                 <button onClick={() => deleteMember(member.id)}>Ta bort</button>
               </Buttons>
             </ListItem>
-          )
+          ),
         )}
       </List>
     </Container>
@@ -192,16 +193,16 @@ const Container = styled.div`
   padding: 10px;
   background-color: white;
   border-radius: 6px;
-  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 
-h2 {
-margin-top: 20px;
-}
+  h2 {
+    margin-top: 20px;
+  }
 
-p {
-margin-top: 28px;
-margin-bottom: 10px;
-}
+  p {
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
 `;
 
 const AddMemberSection = styled.div`

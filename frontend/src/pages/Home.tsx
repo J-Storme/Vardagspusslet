@@ -1,11 +1,10 @@
 import styled from 'styled-components';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import CalendarView from '../components/Calendar';
 import Events from '../components/Events';
 import { useLogin } from '../context/LoginContext';
 import { useNavigate } from 'react-router-dom';
 import { Event, FamilyMember } from '../types';
-
 
 function Home() {
   const { token, userId } = useLogin();
@@ -42,7 +41,7 @@ function Home() {
           .filter((member): member is FamilyMember => !!member);
 
         const uniqueMembers = Array.from(
-          new Map(allMembers.map((m) => [m.id, m])).values()
+          new Map(allMembers.map((m) => [m.id, m])).values(),
         );
 
         setFamilyMembers(uniqueMembers);
@@ -58,17 +57,20 @@ function Home() {
     return <div>Du måste vara inloggad för att se events.</div>;
   }
 
-
   return (
     <EventsContainer>
       <h1>Välkommen till Vardagspusslet!</h1>
       <p>Planera familjens vardag tillsammans.</p>
       <CalendarView events={events} familyMembers={familyMembers} />
-      <Events token={token} userId={userId} events={events} setEvents={setEvents} />
+      <Events
+        token={token}
+        userId={userId}
+        events={events}
+        setEvents={setEvents}
+      />
     </EventsContainer>
   );
 }
-
 
 export default Home;
 

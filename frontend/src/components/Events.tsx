@@ -16,7 +16,6 @@ type Props = {
   setEvents: React.Dispatch<React.SetStateAction<Event[]>>;
 };
 
-
 //function Events({ userId, token }: Props) {
 function Events({ userId, token, events, setEvents }: Props) {
   // state
@@ -25,7 +24,9 @@ function Events({ userId, token, events, setEvents }: Props) {
   const [eventDate, setEventDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<number[]>([]);
+  const [selectedFamilyMembers, setSelectedFamilyMembers] = useState<number[]>(
+    [],
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isAddingEvent, setIsAddingEvent] = useState(false); // Lägg till event-form visas ej från början
   //const [events, setEvents] = useState<Event[]>([]);
@@ -78,8 +79,7 @@ function Events({ userId, token, events, setEvents }: Props) {
       /*if (Array.isArray(data)) {
         setEvents(data);*/
       if (Array.isArray(data)) {
-
-        const mappedEvents = data.map((ev: any) => ({
+        const mappedEvents = data.map((ev: Event) => ({
           id: ev.id,
           title: ev.title,
           description: ev.description,
@@ -87,16 +87,16 @@ function Events({ userId, token, events, setEvents }: Props) {
           start_time: ev.start_time,
           end_time: ev.end_time,
           family_member_ids: ev.family_member_ids,
-          user_id: ev.user_id
+          user_id: ev.user_id,
         }));
         setEvents(mappedEvents);
-
-
       } else {
-        console.error('Fel format från backend. Förväntade en array, fick:', data);
+        console.error(
+          'Fel format från backend. Förväntade en array, fick:',
+          data,
+        );
         setEvents([]); // Fallback
       }
-
     } catch (error) {
       console.error('Kunde inte hämta events', error);
     }
@@ -112,7 +112,8 @@ function Events({ userId, token, events, setEvents }: Props) {
     }
 
     // Lägger till :00 innan det skickas till backend eftersom TIME i postgre vill ha sekunder
-    const startTimePlusZeros = startTime.length === 5 ? startTime + ':00' : startTime;
+    const startTimePlusZeros =
+      startTime.length === 5 ? startTime + ':00' : startTime;
     const endTimePlusZeros = endTime.length === 5 ? endTime + ':00' : endTime;
 
     try {
@@ -120,7 +121,7 @@ function Events({ userId, token, events, setEvents }: Props) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title,
@@ -147,7 +148,6 @@ function Events({ userId, token, events, setEvents }: Props) {
       setEventDate('');
       setSelectedFamilyMembers([]);
       setIsAddingEvent(false); // Stänger formuläret för att skapa event
-
     } catch (error) {
       setErrorMessage('Fel vid skapande av event');
       console.error(error);
@@ -176,9 +176,12 @@ function Events({ userId, token, events, setEvents }: Props) {
   return (
     <EventsFormContainer>
       <Title>Aktiviteter</Title>
+      {loading && <p>Laddar...</p>}
       <FormContainer>
         {!isAddingEvent && (
-          <SubmitButton onClick={ /*För att öppna formuläret */() => setIsAddingEvent(true)}>
+          <SubmitButton
+            onClick={/*För att öppna formuläret */ () => setIsAddingEvent(true)}
+          >
             Lägg till nytt event
           </SubmitButton>
         )}
@@ -190,7 +193,9 @@ function Events({ userId, token, events, setEvents }: Props) {
               <input
                 type="text"
                 value={title}
-                onChange={function (event) { setTitle(event.target.value); }}
+                onChange={function (event) {
+                  setTitle(event.target.value);
+                }}
                 required
               />
             </FormGroup>
@@ -199,7 +204,9 @@ function Events({ userId, token, events, setEvents }: Props) {
               <label>Beskrivning:</label>
               <textarea
                 value={description}
-                onChange={function (event) { setDescription(event.target.value); }}
+                onChange={function (event) {
+                  setDescription(event.target.value);
+                }}
               />
             </FormGroup>
 
@@ -208,7 +215,7 @@ function Events({ userId, token, events, setEvents }: Props) {
               <input
                 type="date"
                 value={eventDate}
-                onChange={e => setEventDate(e.target.value)}
+                onChange={(e) => setEventDate(e.target.value)}
                 required
               />
             </FormGroup>
@@ -218,7 +225,7 @@ function Events({ userId, token, events, setEvents }: Props) {
               <input
                 type="time"
                 value={startTime}
-                onChange={event => setStartTime(event.target.value)}
+                onChange={(event) => setStartTime(event.target.value)}
                 required
               />
             </FormGroup>
@@ -228,16 +235,19 @@ function Events({ userId, token, events, setEvents }: Props) {
               <input
                 type="time"
                 value={endTime}
-                onChange={event => setEndTime(event.target.value)}
+                onChange={(event) => setEndTime(event.target.value)}
                 required
               />
             </FormGroup>
 
-
             <FormGroup>
               <label>Familjemedlemmar (minst en):</label>
-              {familyMembers.length === 0 && <NoFamilyMessage>Inga familjemedlemmar hittades.</NoFamilyMessage>}
-              {familyMembers.map(fm => (
+              {familyMembers.length === 0 && (
+                <NoFamilyMessage>
+                  Inga familjemedlemmar hittades.
+                </NoFamilyMessage>
+              )}
+              {familyMembers.map((fm) => (
                 <CheckboxLabel key={fm.id}>
                   <input
                     type="checkbox"
@@ -254,42 +264,52 @@ function Events({ userId, token, events, setEvents }: Props) {
             <SubmitButton type="submit">Skapa Event</SubmitButton>
           </StyledForm>
         )}
-
       </FormContainer>
-
 
       {Array.isArray(events) && events.length > 0 ? (
         <EventList>
-          {events.map(event => (
+          {events.map((event) => (
             <EventItem key={event.id}>
-              <DeleteButton onClick={() => handleDelete(event.id)}>Radera</DeleteButton>
+              <DeleteButton onClick={() => handleDelete(event.id)}>
+                Radera
+              </DeleteButton>
               <strong>{event.title}</strong>
               <br />
-              { /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
+              {
+                /* Skapa ett Date-objekt med newDate(), omvandla till ISO-string .split('T' delar upp strängen i två delar,
               och [0] tar första delen av arrayen som är datumet*/
-                new Date(event.event_date).toISOString().split('T')[0]}
+                new Date(event.event_date).toISOString().split('T')[0]
+              }
               <br />
-              { // Visa start- och sluttid utan sekunder genom att ta bort 5 första tecknena
+              {
+                // Visa start- och sluttid utan sekunder genom att ta bort 5 första tecknena
                 event.start_time && event.end_time
                   ? `${event.start_time.slice(0, 5)} - ${event.end_time.slice(0, 5)}`
-                  : ''}
+                  : ''
+              }
               <br />
-              {// Lägger till description om det finns
-                event.description && <em>{event.description}</em>}
+              {
+                // Lägger till description om det finns
+                event.description && <em>{event.description}</em>
+              }
               <br />
-              {!event.family_member_ids || event.family_member_ids.length === 0
-                ? 'Ingen'
-                : event.family_member_ids
-                  .map(id => familyMembers.find(fm => fm.id === id)?.name)
-                  .filter(Boolean) // Ta bort undefined om någon inte hittas
-                  .join(', ') //Gör en lista med kommatecken mellan
+              {
+                !event.family_member_ids || event.family_member_ids.length === 0
+                  ? 'Ingen'
+                  : event.family_member_ids
+                      .map(
+                        (id) => familyMembers.find((fm) => fm.id === id)?.name,
+                      )
+                      .filter(Boolean) // Ta bort undefined om någon inte hittas
+                      .join(', ') //Gör en lista med kommatecken mellan
               }
               <br />
             </EventItem>
           ))}
         </EventList>
-      ) : (<p>Inga events skapade än.</p>)
-      }
+      ) : (
+        <p>Inga events skapade än.</p>
+      )}
     </EventsFormContainer>
   );
 }
@@ -301,8 +321,8 @@ const EventsFormContainer = styled.div`
   max-width: 800px;
   min-width: 350px;
   margin: 0.5rem auto;
-  padding: 2rem;  
-  border-radius: 12px;  
+  padding: 2rem;
+  border-radius: 12px;
   background: transparent;
 `;
 
@@ -334,8 +354,8 @@ const FormGroup = styled.div`
     margin-bottom: 0.5rem;
   }
 
-  input[type="text"],
-  input[type="date"],
+  input[type='text'],
+  input[type='date'],
   textarea {
     padding: 0.5rem;
     border: 1px solid #ccc;
@@ -387,37 +407,37 @@ const EventList = styled.ul`
   max-width: 700px;
   min-width: 300px;
   margin: 0 auto;
-  `;
+`;
 
 const EventItem = styled.li`
-position: relative;
-border: 1px solid #ccc;
-margin: 1em 0;
-padding: 1em;
-border-radius: 8px;
-box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
-background: linear-gradient(
-  135deg,
-  rgb(241, 232, 248), 
-  rgb(243, 238, 247), 
-  rgb(230, 226, 238)   
-);
+  position: relative;
+  border: 1px solid #ccc;
+  margin: 1em 0;
+  padding: 1em;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(31, 30, 30, 0.5);
+  background: linear-gradient(
+    135deg,
+    rgb(241, 232, 248),
+    rgb(243, 238, 247),
+    rgb(230, 226, 238)
+  );
 `;
 
 const DeleteButton = styled.button`
-position: absolute;
-top: 8px;
-right: 6px;
-font-size: 11px;
-background:rgb(116, 112, 111);
-color: rgb(255, 255, 255);
-cursor: pointer;
-padding: 0.15rem .5rem;
-border: 1px;
-border-radius: 8px;
-transition: background - color 0.3s;
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  font-size: 11px;
+  background: rgb(116, 112, 111);
+  color: rgb(255, 255, 255);
+  cursor: pointer;
+  padding: 0.15rem 0.5rem;
+  border: 1px;
+  border-radius: 8px;
+  transition: background - color 0.3s;
 
   &:hover {
-  background: rgb(189, 11, 11);
-}
+    background: rgb(189, 11, 11);
+  }
 `;

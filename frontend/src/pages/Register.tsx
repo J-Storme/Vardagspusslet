@@ -43,10 +43,9 @@ function Register() {
       // Logga in användaren direkt
       login(data.token, data.email, data.name, data.id);
       navigate('/'); // Navigera till home efter inloggning
-
     } catch (error) {
-      // console.error('Fel vid registrering:', error);
-      // setError('Något gick fel vid registrering');
+      console.error('Fel vid registrering:', error);
+      //setError('Något gick fel vid registrering');
     }
   };
 
@@ -102,7 +101,7 @@ const RegisterContainer = styled.div`
   gap: 10px;
 
   h2 {
-  margin-top: 30px;
+    margin-top: 30px;
   }
 `;
 
@@ -110,10 +109,10 @@ const LabelRow = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  
+
   label {
     font-weight: bold;
-    width: 100px; 
+    width: 100px;
   }
 
   input {
@@ -125,7 +124,7 @@ const LabelRow = styled.div`
 
 const Button = styled.button`
   display: inline-block;
-  background-color:rgb(117, 119, 212);
+  background-color: rgb(117, 119, 212);
   color: white;
   font-weight: bold;
   padding: 0.75rem 1.25rem;
@@ -137,8 +136,6 @@ const Button = styled.button`
   transition: background-color 0.3s;
 
   &:hover {
-    background-color:rgb(138, 212, 142);
+    background-color: rgb(138, 212, 142);
   }
 `;
-
-

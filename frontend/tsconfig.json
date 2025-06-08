@@ -2,10 +2,7 @@
   "compilerOptions": {
     "target": "es5", // Sätt det till ES5 för bredare webbläsarstöd
     "sourceMap": true,
-    "lib": [
-      "dom",
-      "esnext"
-    ], // Tillåt dom- och esnext-bibliotek
+    "lib": ["dom", "esnext"], // Tillåt dom- och esnext-bibliotek
     "jsx": "react-jsx", // För React 17 och senare
     "moduleResolution": "node", // Gör det möjligt att lösa moduler som Node.js
     "esModuleInterop": true, // För att hantera CommonJS-moduler korrekt
@@ -15,9 +12,7 @@
     "forceConsistentCasingInFileNames": true, // Ser till att filnamn är konsekventa i små/stora bokstäver
     "outDir": "build",
     "rootDir": "src",
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
   "include": [
     "src/**/*" // Inkludera alla filer i src-mappen

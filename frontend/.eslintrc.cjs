@@ -24,4 +24,8 @@ module.exports = {
     es2021: true,
   },
   ignorePatterns: ['dist/', 'node_modules/'],
+
+  rules: {
+    'react/react-in-jsx-scope': 'off', // Behövs inte längre i React 17+
+  },
 };

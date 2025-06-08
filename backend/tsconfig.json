@@ -10,11 +10,6 @@
     "skipLibCheck": true, // Snabbare kompilering, hoppar över kontroll av d.ts-filer
     "sourceMap": true // Hjälpre vid felsökning
   },
-  "include": [
-    "**/*.ts"
-  ],
-  "exclude": [
-    "dist",
-    "node_modules"
-  ]
+  "include": ["**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }

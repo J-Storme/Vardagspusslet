@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
+//import type { User, Task, FamilyMember, Category, Event } from './types';
 
 interface UserRequest extends Request {
   user?: {
